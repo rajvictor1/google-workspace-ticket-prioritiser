@@ -4,50 +4,110 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ticket Prioritiser | Google Workspace Studio Automation</title>
-  <meta name="description" content="How a Google Workspace Studio flow reads support tickets, sets priority and category with Gemini, and only alerts people when it matters.">
+  <meta name="description" content="A live Google Workspace Studio automation that classifies support tickets with Gemini and only alerts you for high-priority issues.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #ffffff;
-      --surface: #f8f9fa;
-      --surface-2: #f1f3f4;
-      --border: #dadce0;
-      --text: #202124;
-      --text-secondary: #5f6368;
-      --blue: #1a73e8;
-      --blue-light: #e8f0fe;
-      --red: #ea4335;
-      --red-light: #fce8e6;
-      --yellow: #fbbc04;
-      --yellow-light: #fef3c7;
-      --green: #34a853;
-      --green-light: #e6f4ea;
-      --shadow: 0 1px 2px 0 rgba(60,64,67,0.08), 0 1px 6px 1px rgba(60,64,67,0.06);
-      --shadow-lg: 0 4px 8px 0 rgba(60,64,67,0.10), 0 8px 24px 4px rgba(60,64,67,0.08);
-      --radius: 12px;
+      --bg: #08080a;
+      --surface: #111114;
+      --surface-2: #1a1a1f;
+      --surface-3: #24242b;
+      --border: rgba(255,255,255,0.08);
+      --text: #f5f5f7;
+      --text-muted: #8b8b96;
+      --accent: #a78bfa;
+      --accent-2: #60a5fa;
+      --accent-glow: rgba(167,139,250,0.35);
+      --green: #34d399;
+      --green-dim: rgba(52,211,153,0.15);
+      --red: #f87171;
+      --red-dim: rgba(248,113,113,0.15);
+      --yellow: #fbbf24;
+      --yellow-dim: rgba(251,191,36,0.15);
+      --blue: #60a5fa;
+      --blue-dim: rgba(96,165,250,0.15);
+      --radius: 20px;
+      --shadow: 0 24px 60px rgba(0,0,0,0.55);
     }
 
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: Inter, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    a { color: var(--blue); text-decoration: none; }
+    /* Ambient background */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: float 18s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      top: -10%; right: -5%;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
+      bottom: 10%; left: -8%;
+      animation-delay: -6s;
+    }
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, var(--green) 0%, transparent 70%);
+      top: 45%; left: 35%;
+      opacity: 0.2;
+      animation-delay: -12s;
+    }
+    .grid-floor {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
+      animation: gridMove 30s linear infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.98); }
+    }
+    @keyframes gridMove {
+      0% { transform: perspective(600px) rotateX(60deg) translateY(0); }
+      100% { transform: perspective(600px) rotateX(60deg) translateY(60px); }
+    }
+
+    a { color: var(--accent-2); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
     .container {
       width: 100%;
-      max-width: 1180px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 0 24px;
+      position: relative;
+      z-index: 2;
     }
 
     /* Navbar */
@@ -55,274 +115,319 @@
       position: sticky;
       top: 0;
       z-index: 100;
-      background: rgba(255,255,255,0.96);
-      backdrop-filter: blur(8px);
+      background: rgba(8,8,10,0.75);
+      backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
     }
     .nav-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 64px;
+      height: 72px;
     }
     .nav-logo {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 700;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 18px;
       color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
     }
-    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-logo .logo-shape {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
     .nav-links {
       display: flex;
-      gap: 24px;
+      gap: 32px;
       font-size: 14px;
       font-weight: 500;
+      align-items: center;
     }
-    .nav-links a { color: var(--text-secondary); }
+    .nav-links a { color: var(--text-muted); transition: color 0.2s; }
     .nav-links a:hover { color: var(--text); text-decoration: none; }
     .nav-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      background: var(--blue);
-      color: #fff !important;
+      padding: 10px 20px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #08080a !important;
+      font-weight: 700;
       font-size: 13px;
-      font-weight: 600;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .nav-cta:hover { background: #1557b0; text-decoration: none; }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px var(--accent-glow); text-decoration: none; }
 
     /* Hero */
     .hero {
-      padding: 80px 0 64px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      padding: 100px 0 80px;
+      position: relative;
     }
     .hero-grid {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 64px;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 60px;
       align-items: center;
     }
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 12px;
-      background: var(--blue-light);
-      color: var(--blue);
-      border-radius: 20px;
+      padding: 7px 14px;
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.25);
+      color: var(--accent);
+      border-radius: 24px;
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 20px;
+      letter-spacing: 0.8px;
+      margin-bottom: 24px;
+      width: fit-content;
+    }
+    .eyebrow .pulse {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.85); }
     }
     .hero h1 {
-      font-size: clamp(36px, 5vw, 56px);
-      line-height: 1.08;
+      font-size: clamp(42px, 5.5vw, 68px);
+      line-height: 1.05;
       font-weight: 800;
-      margin: 0 0 20px;
-      letter-spacing: -0.02em;
+      margin: 0 0 22px;
+      letter-spacing: -0.03em;
     }
-    .hero p.lead {
+    .hero h1 span { color: var(--accent); }
+    .hero .lead {
       font-size: 18px;
-      color: var(--text-secondary);
-      margin: 0 0 28px;
-      max-width: 540px;
+      color: var(--text-muted);
+      margin: 0 0 32px;
+      max-width: 560px;
     }
     .hero-meta {
       display: flex;
-      gap: 20px;
+      gap: 24px;
       flex-wrap: wrap;
       font-size: 14px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
-    .hero-meta span { display: flex; align-items: center; gap: 6px; }
+    .hero-meta span { display: flex; align-items: center; gap: 8px; }
 
-    .hero-card {
-      background: #fff;
+    /* Glass card */
+    .glass-card {
+      background: rgba(17,17,20,0.65);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
-    .hero-card-head {
+    .hero-card .card-head {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 16px;
-      background: var(--surface-2);
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.03);
       border-bottom: 1px solid var(--border);
       font-size: 13px;
       font-weight: 600;
     }
-    .hero-card-head .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
-    .hero-card-body { padding: 20px; }
-    .chat-bubble {
-      background: var(--green-light);
-      border: 1px solid #c6e7c8;
+    .hero-card .card-head .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+    .hero-card .card-body { padding: 24px; }
+    .hero-card .chat-bubble {
+      background: rgba(52,211,153,0.12);
+      border: 1px solid rgba(52,211,153,0.25);
       border-radius: 16px 16px 16px 4px;
-      padding: 14px 16px;
-      font-size: 14px;
-      margin-bottom: 16px;
+      padding: 18px;
+      font-size: 15px;
+      margin-bottom: 20px;
     }
-    .chat-bubble strong { color: var(--text); }
-    .hero-card-row {
+    .hero-card .chat-bubble strong { color: var(--text); }
+    .hero-card .chat-bubble .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      margin-right: 6px;
+    }
+    .tag-high { background: var(--red-dim); color: var(--red); }
+    .tag-billing { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .hero-card .row {
       display: flex;
       justify-content: space-between;
-      padding: 10px 0;
+      padding: 12px 0;
       border-bottom: 1px solid var(--border);
       font-size: 14px;
     }
-    .hero-card-row:last-child { border-bottom: 0; }
-    .hero-card-label { color: var(--text-secondary); }
-    .hero-card-value { font-weight: 600; }
-    .hero-card-value.high { color: var(--red); }
-    .hero-card-value.low { color: var(--blue); }
+    .hero-card .row:last-child { border-bottom: 0; }
+    .hero-card .label { color: var(--text-muted); }
+    .hero-card .value { font-weight: 600; }
 
-    /* Sections */
-    section { padding: 72px 0; }
-    section.alt { background: var(--surface); }
+    /* Section styling */
+    section { padding: 90px 0; position: relative; }
+    section.alt { background: rgba(255,255,255,0.015); }
     .section-head {
       max-width: 720px;
-      margin-bottom: 44px;
+      margin-bottom: 56px;
     }
     .section-head h2 {
-      font-size: clamp(28px, 3.5vw, 40px);
+      font-size: clamp(32px, 4vw, 46px);
       font-weight: 800;
-      line-height: 1.15;
-      margin: 0 0 12px;
-      letter-spacing: -0.01em;
+      line-height: 1.1;
+      margin: 0 0 14px;
+      letter-spacing: -0.02em;
     }
     .section-head p {
       font-size: 18px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       margin: 0;
     }
 
     /* Problem / Solution */
-    .problem-solution {
+    .two-col {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
     }
     .info-card {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 28px;
+      padding: 32px;
       box-shadow: var(--shadow);
+      transition: transform 0.3s, border-color 0.3s;
     }
+    .info-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
     .info-card h3 {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      margin: 0 0 14px;
+      margin: 0 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     .info-card ul {
       margin: 0;
       padding-left: 20px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
-    .info-card li { margin-bottom: 8px; }
+    .info-card li { margin-bottom: 10px; }
 
-    /* Framework */
+    /* Framework cards */
     .framework-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 18px;
     }
     .framework-card {
-      background: #fff;
-      border: 2px solid var(--border);
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 28px;
       box-shadow: var(--shadow);
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
       position: relative;
     }
-    .framework-card.blue { border-color: var(--blue); }
-    .framework-card.red { border-color: var(--red); }
-    .framework-card.yellow { border-color: var(--yellow); }
-    .framework-card.green { border-color: var(--green); }
+    .framework-card:hover { transform: translateY(-8px) rotateX(2deg); box-shadow: 0 32px 70px rgba(0,0,0,0.65); }
+    .framework-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      padding: 1px;
+      background: linear-gradient(135deg, var(--accent), transparent 40%, transparent);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .framework-card:hover::before { opacity: 1; }
+    .framework-card.blue { border-top: 3px solid var(--blue); }
+    .framework-card.red { border-top: 3px solid var(--red); }
+    .framework-card.yellow { border-top: 3px solid var(--yellow); }
+    .framework-card.green { border-top: 3px solid var(--green); }
+    .framework-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
     .framework-card.blue .framework-icon { background: var(--blue); }
     .framework-card.red .framework-icon { background: var(--red); }
     .framework-card.yellow .framework-icon { background: var(--yellow); }
     .framework-card.green .framework-icon { background: var(--green); }
-    .framework-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 14px;
-    }
     .framework-card h4 {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      margin: 0 0 10px;
+      margin: 0 0 12px;
     }
-    .framework-card.blue h4 { color: var(--blue); }
-    .framework-card.red h4 { color: var(--red); }
-    .framework-card.yellow h4 { color: var(--yellow); }
-    .framework-card.green h4 { color: var(--green); }
     .framework-card p {
       font-size: 14px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
       margin: 0;
     }
     .framework-card ul {
-      margin: 12px 0 0;
+      margin: 14px 0 0;
       padding-left: 18px;
       font-size: 13px;
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
-    .framework-card li { margin-bottom: 6px; }
+    .framework-card li { margin-bottom: 7px; }
 
     /* Steps */
     .steps {
       display: grid;
-      gap: 16px;
+      gap: 18px;
     }
     .step {
       display: grid;
-      grid-template-columns: 48px 1fr;
-      gap: 20px;
-      background: #fff;
+      grid-template-columns: 56px 1fr;
+      gap: 22px;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 28px;
       box-shadow: var(--shadow);
+      transition: transform 0.2s;
     }
+    .step:hover { transform: translateX(6px); }
     .step-num {
-      width: 48px;
-      height: 48px;
+      width: 56px; height: 56px;
       border-radius: 50%;
-      background: var(--blue);
-      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #08080a;
       display: grid;
       place-items: center;
-      font-weight: 800;
-      font-size: 18px;
+      font-weight: 900;
+      font-size: 20px;
+      box-shadow: 0 8px 24px var(--accent-glow);
     }
-    .step h4 {
-      font-size: 17px;
-      font-weight: 700;
-      margin: 0 0 8px;
-    }
-    .step p {
-      font-size: 15px;
-      color: var(--text-secondary);
-      margin: 0;
-    }
+    .step h4 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+    .step p { font-size: 15px; color: var(--text-muted); margin: 0; }
 
     /* Table */
-    .data-table-wrap {
-      background: #fff;
+    .table-wrap {
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
@@ -332,71 +437,71 @@
     .data-table th {
       background: var(--surface-2);
       text-align: left;
-      padding: 14px 16px;
+      padding: 16px 18px;
       font-weight: 700;
-      font-size: 12px;
+      font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-secondary);
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
       border-bottom: 1px solid var(--border);
     }
     .data-table td {
-      padding: 14px 16px;
+      padding: 16px 18px;
       border-bottom: 1px solid var(--border);
-      color: var(--text-secondary);
+      color: var(--text-muted);
     }
     .data-table tr:last-child td { border-bottom: 0; }
     .data-table .issue { color: var(--text); font-weight: 500; }
     .badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.5px;
     }
-    .badge-high { background: var(--red-light); color: var(--red); }
-    .badge-medium { background: var(--yellow-light); color: #b06000; }
-    .badge-low { background: var(--blue-light); color: var(--blue); }
-    .badge-billing { background: #fff0e6; color: #d56a00; }
-    .badge-technical { background: #e8eaed; color: #444; }
-    .badge-account { background: #e8f0fe; color: var(--blue); }
+    .badge-high { background: var(--red-dim); color: var(--red); }
+    .badge-medium { background: var(--yellow-dim); color: var(--yellow); }
+    .badge-low { background: var(--blue-dim); color: var(--blue); }
+    .badge-billing { background: rgba(251,191,36,0.12); color: var(--yellow); }
+    .badge-technical { background: rgba(255,255,255,0.08); color: var(--text-muted); }
+    .badge-account { background: var(--blue-dim); color: var(--blue); }
 
-    /* Verification */
+    /* Verification gallery */
     .verification-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
     }
     .verification-card {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
-      text-align: center;
+      overflow: hidden;
       box-shadow: var(--shadow);
+      transition: transform 0.3s;
     }
+    .verification-card:hover { transform: translateY(-6px); }
+    .verification-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .verification-card .v-body { padding: 22px; }
     .verification-card .check {
-      width: 48px;
-      height: 48px;
+      width: 32px; height: 32px;
       border-radius: 50%;
-      background: var(--green-light);
+      background: var(--green-dim);
       color: var(--green);
       display: grid;
       place-items: center;
-      margin: 0 auto 14px;
+      margin-bottom: 12px;
     }
-    .verification-card h4 {
-      font-size: 16px;
-      font-weight: 700;
-      margin: 0 0 8px;
-    }
-    .verification-card p {
-      font-size: 13px;
-      color: var(--text-secondary);
-      margin: 0;
-    }
+    .verification-card h4 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
+    .verification-card p { font-size: 13px; color: var(--text-muted); margin: 0; }
 
     /* Summary */
     .summary-grid {
@@ -405,88 +510,108 @@
       gap: 18px;
     }
     .summary-card {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 28px;
       box-shadow: var(--shadow);
+      transition: transform 0.3s;
     }
+    .summary-card:hover { transform: translateY(-4px); }
     .summary-card h4 {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-secondary);
-      margin: 0 0 12px;
+      letter-spacing: 0.8px;
+      color: var(--accent);
+      margin: 0 0 14px;
     }
-    .summary-card p {
-      font-size: 15px;
-      color: var(--text);
-      margin: 0;
-      font-weight: 500;
-    }
+    .summary-card p { font-size: 15px; color: var(--text); margin: 0; font-weight: 500; }
 
-    /* Screenshot placeholders */
-    .screenshot {
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-      min-height: 220px;
+    /* Links section */
+    .links-grid {
       display: grid;
-      place-items: center;
-      text-align: center;
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-top: 24px;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
-    .screenshot img {
-      max-width: 100%;
-      height: auto;
-      display: block;
+    .link-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow-lg);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s, border-color 0.3s;
     }
+    .link-card:hover { transform: translateY(-4px); border-color: rgba(167,139,250,0.3); }
+    .link-card h3 { font-size: 20px; font-weight: 700; margin: 0 0 12px; }
+    .link-card p { font-size: 14px; color: var(--text-muted); margin: 0 0 18px; }
+    .link-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 24px;
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.25);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .link-card a:hover { background: rgba(167,139,250,0.2); text-decoration: none; }
 
     /* Footer */
     footer {
-      background: var(--surface-2);
+      background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 40px 0;
+      padding: 48px 0;
       text-align: center;
-      font-size: 13px;
-      color: var(--text-secondary);
+      font-size: 14px;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 2;
     }
     footer strong { color: var(--text); }
+    footer a { color: var(--accent); }
 
     /* Responsive */
-    @media (max-width: 900px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
-      .problem-solution { grid-template-columns: 1fr; }
+    @media (max-width: 960px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
+      .two-col, .links-grid { grid-template-columns: 1fr; }
       .framework-grid { grid-template-columns: repeat(2, 1fr); }
       .verification-grid { grid-template-columns: 1fr; }
       .summary-grid { grid-template-columns: repeat(2, 1fr); }
       .nav-links { display: none; }
+      .hero h1 { font-size: clamp(36px, 8vw, 52px); }
     }
-    @media (max-width: 520px) {
-      .framework-grid { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: 1fr; }
+    @media (max-width: 540px) {
+      .framework-grid, .summary-grid { grid-template-columns: 1fr; }
       .step { grid-template-columns: 1fr; }
-      .step-num { margin-bottom: 10px; }
+      .step-num { margin-bottom: 14px; }
     }
 
     @media print {
-      .nav, footer { display: none; }
-      section { padding: 28px 0; page-break-inside: avoid; }
+      .nav, .ambient, footer { display: none; }
+      section { padding: 32px 0; page-break-inside: avoid; }
       .hero { padding-top: 20px; }
     }
   </style>
 </head>
 <body>
 
+  <div class="ambient">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="grid-floor"></div>
+  </div>
+
   <nav class="nav">
     <div class="container nav-inner">
       <div class="nav-logo">
-        <svg viewBox="0 0 24 24" fill="none"><path fill="#4285F4" d="M22.5 12c0-2.7-1.1-5.1-2.8-6.9L12 13v5h5.8c1.3-1.6 2.1-3.6 2.1-5.8z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H2.3v3.4C4.4 21.4 8 24 12 24z"/><path fill="#FBBC05" d="M5.4 14.3c-.3-.7-.4-1.5-.4-2.3s.1-1.6.4-2.3V6.3H2.3C1.5 8.1 1 10 1 12s.5 3.9 1.3 5.7l3.1-2.4z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.2.6 4.4 1.8l3.3-3.3C17.9 1.2 15.2 0 12 0 8 0 4.4 2.6 2.3 5.7l3.1 2.4c.9-2.8 3.5-4.9 6.6-4.9z"/></svg>
+        <div class="logo-shape">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#08080a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
         Ticket Prioritiser
       </div>
       <div class="nav-links">
@@ -494,7 +619,7 @@
         <a href="#framework">Framework</a>
         <a href="#build">Build</a>
         <a href="#results">Results</a>
-        <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank" class="nav-cta">Open flow →</a>
+        <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank" class="nav-cta">Open live flow →</a>
       </div>
     </div>
   </nav>
@@ -503,39 +628,42 @@
     <div class="container hero-grid">
       <div>
         <div class="eyebrow">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <span class="pulse"></span>
           Google Workspace Studio Automation
         </div>
-        <h1>Let Gemini sort your support tickets while you focus on the urgent ones.</h1>
-        <p class="lead">A live Workspace Studio flow that reads every new ticket, extracts priority and category with Gemini, writes the result back to the sheet, and only alerts you when a ticket is actually high priority.</p>
+        <h1>Let <span>Gemini</span> sort your tickets. You handle only the urgent ones.</h1>
+        <p class="lead">A live Workspace Studio flow that reads every new support ticket, classifies priority and category with Gemini, writes the result back to the sheet, and only alerts you when a ticket is truly high priority.</p>
         <div class="hero-meta">
           <span>👤 Trainer: <strong>Ritesh Hegde</strong></span>
           <span>🛠️ Built in Workspace Studio</span>
-          <span>✅ Status: <strong>Active & tested</strong></span>
+          <span>✅ Active & tested live</span>
         </div>
       </div>
 
-      <div class="hero-card">
-        <div class="hero-card-head">
+      <div class="glass-card hero-card">
+        <div class="card-head">
           <span class="dot"></span>
           New high-priority ticket detected
         </div>
-        <div class="hero-card-body">
+        <div class="card-body">
           <div class="chat-bubble">
-            <strong>Checkout failing for all customers and no payments can be completed.</strong><br>
-            Priority: <span class="hero-card-value high">High</span> · Category: <span class="hero-card-value">Billing</span>
+            <strong>Checkout failing for all customers and no payments can be completed.</strong>
+            <div>
+              <span class="tag tag-high">High Priority</span>
+              <span class="tag tag-billing">Billing</span>
+            </div>
           </div>
-          <div class="hero-card-row">
-            <span class="hero-card-label">Status</span>
-            <span class="hero-card-value">Chat alert sent</span>
+          <div class="row">
+            <span class="label">Status</span>
+            <span class="value">Chat alert sent</span>
           </div>
-          <div class="hero-card-row">
-            <span class="hero-card-label">Auto-classified by</span>
-            <span class="hero-card-value">Gemini</span>
+          <div class="row">
+            <span class="label">Auto-classified by</span>
+            <span class="value">Gemini</span>
           </div>
-          <div class="hero-card-row">
-            <span class="hero-card-label">Written to sheet</span>
-            <span class="hero-card-value">Priority + Category</span>
+          <div class="row">
+            <span class="label">Written to sheet</span>
+            <span class="value">Priority + Category</span>
           </div>
         </div>
       </div>
@@ -546,25 +674,25 @@
     <div class="container">
       <div class="section-head">
         <h2>Workflow opportunity</h2>
-        <p>Every support ticket arrives with the same urgency in the inbox, but not every ticket deserves the same attention. Someone has to read, judge, and route each one — a repetitive decision that burns time and invites bias.</p>
+        <p>Every support ticket arrives with the same urgency. Someone has to read each one, judge its real impact, and route it. That repetitive decision is exactly what automation should own.</p>
       </div>
-      <div class="problem-solution">
+      <div class="two-col">
         <div class="info-card">
-          <h3>The problem</h3>
+          <h3>🚫 The problem</h3>
           <ul>
-            <li>Tickets stack up faster than they can be triaged.</li>
-            <li>Emotional wording ("URGENT!") gets treated as high priority.</li>
-            <li>Repetitive sorting pulls people away from real resolution work.</li>
-            <li>High-priority issues may sit unnoticed among noisy low-priority ones.</li>
+            <li>Tickets pile up faster than they can be triaged.</li>
+            <li>Loud language gets mistaken for real urgency.</li>
+            <li>People waste hours sorting instead of solving.</li>
+            <li>True blockers can hide beneath noisy, low-impact requests.</li>
           </ul>
         </div>
         <div class="info-card">
-          <h3>The solution</h3>
+          <h3>✅ The solution</h3>
           <ul>
             <li>Workspace Studio watches the Google Sheet for new ticket rows.</li>
-            <li>Gemini judges impact, not tone, and returns Priority + Category.</li>
-            <li>The flow writes those values back to the same row.</li>
-            <li>Only High-priority tickets trigger a Google Chat notification.</li>
+            <li>Gemini judges impact, not tone.</li>
+            <li>Priority and Category write back to the same row.</li>
+            <li>Only High-priority tickets interrupt a person via Chat.</li>
           </ul>
         </div>
       </div>
@@ -575,7 +703,7 @@
     <div class="container">
       <div class="section-head">
         <h2>The Four-Filter Framework</h2>
-        <p>Ritesh Hegde’s workflow design breaks any automation into four clear parts: what starts it, what decides it, what changes because of it, and who needs to know.</p>
+        <p>Ritesh Hegde teaches every automation as four parts: what starts it, what decides it, what changes because of it, and who needs to know.</p>
       </div>
       <div class="framework-grid">
         <div class="framework-card blue">
@@ -584,8 +712,8 @@
           <p>A new ticket row appears in the private Google Sheet.</p>
           <ul>
             <li>Watches the <strong>Issue description</strong> column.</li>
-            <li>Ignores its own write-back to Priority/Category.</li>
-            <li>Fires within seconds of a new row.</li>
+            <li>Ignores its own Priority/Category write-back.</li>
+            <li>Fires within seconds.</li>
           </ul>
         </div>
         <div class="framework-card red">
@@ -595,7 +723,7 @@
           <ul>
             <li><strong>Priority:</strong> High / Medium / Low</li>
             <li><strong>Category:</strong> Billing, Technical, Policy, Account Access, Other</li>
-            <li><strong>Summary:</strong> One line, max 15 words</li>
+            <li><strong>Summary:</strong> ≤15 words</li>
           </ul>
         </div>
         <div class="framework-card yellow">
@@ -614,8 +742,8 @@
           <p>Only High-priority tickets interrupt a person.</p>
           <ul>
             <li>Check if Priority = High.</li>
-            <li>If true, send a private Google Chat alert.</li>
-            <li>Medium and Low tickets are silent.</li>
+            <li>If true, send private Google Chat alert.</li>
+            <li>Medium and Low stay silent.</li>
           </ul>
         </div>
       </div>
@@ -667,7 +795,7 @@
         <div class="step">
           <div class="step-num">6</div>
           <div>
-            <h4>Activated and tested</h4>
+            <h4>Activated and tested live</h4>
             <p>Turned the flow on. Added two live test rows to the sheet. Both completed successfully, producing High/Billing and Low/Account Access classifications.</p>
           </div>
         </div>
@@ -681,7 +809,7 @@
         <h2>Source ticket data</h2>
         <p>Three sample tickets from the CSV. Priority and Category were blank in the source and are filled by the workflow.</p>
       </div>
-      <div class="data-table-wrap">
+      <div class="table-wrap">
         <table class="data-table">
           <thead>
             <tr>
@@ -717,7 +845,7 @@
           </tbody>
         </table>
       </div>
-      <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);">Note: The third ticket sounds dramatic, but Gemini judged it by impact — not tone — and correctly classified it as Low priority.</p>
+      <p style="margin-top:16px;font-size:14px;color:var(--text-muted);">Note: The third ticket sounds dramatic, but Gemini judged it by impact — not tone — and correctly classified it as Low priority.</p>
     </div>
   </section>
 
@@ -727,7 +855,7 @@
         <h2>Live test results</h2>
         <p>After activation, two new tickets were added directly to the sheet to confirm the end-to-end flow works in production.</p>
       </div>
-      <div class="data-table-wrap">
+      <div class="table-wrap">
         <table class="data-table">
           <thead>
             <tr>
@@ -745,12 +873,12 @@
             <tr>
               <td class="issue">Customer needs help updating the spelling of their profile name</td>
               <td><span class="badge badge-low">Low</span> <span class="badge badge-account">Account Access</span></td>
-              <td><span style="color:var(--text-secondary);">No — silent</span></td>
+              <td><span style="color:var(--text-muted);">No — silent</span></td>
             </tr>
           </tbody>
         </table>
       </div>
-      <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);">Workspace Studio recorded both executions as Complete on September 20, 2026 at 10:55 AM and 10:56 AM.</p>
+      <p style="margin-top:16px;font-size:14px;color:var(--text-muted);">Workspace Studio recorded both executions as Complete on September 20, 2026 at 10:55 AM and 10:56 AM.</p>
     </div>
   </section>
 
@@ -758,26 +886,37 @@
     <div class="container">
       <div class="section-head">
         <h2>Verification evidence</h2>
-        <p>Three screenshots were captured during final verification. Add them to the <code>assets/</code> folder and update the image paths below.</p>
+        <p>Screenshots from the live Workspace Studio flow and the classified Google Sheet.</p>
       </div>
       <div class="verification-grid">
         <div class="verification-card">
-          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <h4>Active workflow overview</h4>
-          <p>Six-step flow visible in Workspace Studio with Turn on confirmed.</p>
+          <img src="assets/verify-6.png" alt="Workspace Studio flows list showing Ticket Prioritiser" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
+          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Workspace Studio flows</div>
+          <div class="v-body">
+            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <h4>Active workflow overview</h4>
+            <p>Ticket Prioritiser flow listed in Workspace Studio, ready to run.</p>
+          </div>
         </div>
         <div class="verification-card">
-          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <h4>Activity history</h4>
-          <p>Two completed executions recorded at 10:55 AM and 10:56 AM.</p>
+          <img src="assets/verify-1.png" alt="Workspace Studio activity history" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
+          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Workflow activity history</div>
+          <div class="v-body">
+            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <h4>Activity history</h4>
+            <p>Live executions captured during final verification.</p>
+          </div>
         </div>
         <div class="verification-card">
-          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-          <h4>Classified sheet</h4>
-          <p>Final Google Sheet shows imported tickets plus High/Low test results.</p>
+          <img src="assets/verify-7.png" alt="Classified Google Sheet results" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
+          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Classified Google Sheet</div>
+          <div class="v-body">
+            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <h4>Classified sheet</h4>
+            <p>Final Google Sheet shows imported tickets plus test classifications.</p>
+          </div>
         </div>
       </div>
-      <div class="screenshot">Screenshot placeholders — drop images into assets/ and update paths</div>
     </div>
   </section>
 
@@ -785,20 +924,20 @@
     <div class="container">
       <div class="section-head">
         <h2>Problem · Solution · Outcome · Metric</h2>
-        <p>The 3-minute share-back summary for the workshop.</p>
+        <p>The 3-minute share-back summary.</p>
       </div>
       <div class="summary-grid">
         <div class="summary-card">
           <h4>Problem</h4>
-          <p>Manually triaging every support ticket is slow, inconsistent, and lets emotional tone drive urgency.</p>
+          <p>Manual ticket triage is slow, inconsistent, and lets emotional tone drive urgency.</p>
         </div>
         <div class="summary-card">
           <h4>Solution</h4>
-          <p>A Workspace Studio flow uses Gemini to classify tickets by impact, then routes only High-priority items to Chat.</p>
+          <p>A Workspace Studio flow uses Gemini to classify tickets by impact and route only High-priority items to Chat.</p>
         </div>
         <div class="summary-card">
           <h4>Outcome</h4>
-          <p>Routine tickets sort themselves automatically. People only get interrupted when a ticket is truly urgent.</p>
+          <p>Routine tickets sort themselves. People only get interrupted when something is truly urgent.</p>
         </div>
         <div class="summary-card">
           <h4>Metric</h4>
@@ -814,16 +953,16 @@
         <h2>Live resources</h2>
         <p>Access the private Google Sheet and the active Workspace Studio flow directly.</p>
       </div>
-      <div class="problem-solution">
-        <div class="info-card">
+      <div class="links-grid">
+        <div class="link-card">
           <h3>Google Sheet</h3>
-          <p style="color:var(--text-secondary);font-size:14px;">Private to Rajesh Kumar. Contains source tickets and the classified test results.</p>
-          <p style="margin-top:12px;"><a href="https://docs.google.com/spreadsheets/d/1t5chhAh9STqqYvnBMlGFbDQAZ-GVC0vwWJYCnm0oJtA/edit?gid=0" target="_blank">Open Sheet →</a></p>
+          <p>Private to Rajesh Kumar. Contains source tickets and classified test results.</p>
+          <a href="https://docs.google.com/spreadsheets/d/1t5chhAh9STqqYvnBMlGFbDQAZ-GVC0vwWJYCnm0oJtA/edit?gid=0" target="_blank">Open Sheet →</a>
         </div>
-        <div class="info-card">
+        <div class="link-card">
           <h3>Workspace Studio flow</h3>
-          <p style="color:var(--text-secondary);font-size:14px;">Active flow named “Ticket Prioritiser.” You can see the six steps and run history.</p>
-          <p style="margin-top:12px;"><a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank">Open flow →</a></p>
+          <p>Active flow named “Ticket Prioritiser.” View the six steps and run history.</p>
+          <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank">Open flow →</a>
         </div>
       </div>
     </div>
