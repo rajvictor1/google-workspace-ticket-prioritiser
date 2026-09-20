@@ -174,24 +174,36 @@
     .mobile-nav .logo-text { font-weight: 800; font-size: 16px; font-family: 'Space Grotesk', sans-serif; }
 
     /* Hero */
-    .hero { padding: 60px 0 42px; }
-    .trainer-row {
+    .hero { padding: 48px 0 36px; }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 44px;
+      align-items: start;
+    }
+    .hero-left { min-width: 0; }
+    .trainer-card {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       margin-bottom: 24px;
+      max-width: 460px;
     }
-    .trainer-avatar {
-      width: 54px; height: 54px;
+    .trainer-card .trainer-avatar {
+      width: 62px; height: 62px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid rgba(167,139,250,0.4);
+      border: 2px solid rgba(167,139,250,0.35);
       box-shadow: 0 8px 24px var(--accent-glow);
+      flex-shrink: 0;
     }
-    .trainer-info .name { font-weight: 800; font-size: 15px; }
-    .trainer-info .role { font-size: 13px; color: var(--text-muted); }
-    .trainer-info a { color: var(--accent); font-size: 13px; }
-
+    .trainer-card .trainer-info .name { font-size: 17px; font-weight: 800; }
+    .trainer-card .trainer-info .role { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+    .trainer-card .trainer-info a { color: var(--accent-2); font-size: 13px; font-weight: 600; }
     .eyebrow {
       display: inline-flex;
       align-items: center;
@@ -217,20 +229,63 @@
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
     h1 {
-      font-size: clamp(36px, 5vw, 56px);
+      font-size: clamp(40px, 5.2vw, 64px);
       line-height: 1.05;
       font-weight: 800;
-      margin: 0 0 10px;
+      margin: 0 0 12px;
       letter-spacing: -0.03em;
     }
-    h1 .accent { color: var(--accent); }
     .subline {
-      font-size: 17px;
+      font-size: 18px;
       color: var(--text-muted);
       margin: 0 0 28px;
-      line-height: 1.55;
+      line-height: 1.5;
     }
-    .subline .bracket { font-size: 14px; color: var(--text-muted); opacity: 0.7; }
+    .subline .bracket { font-size: 15px; color: var(--text-muted); opacity: 0.6; }
+
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .hero-image {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      aspect-ratio: 16 / 10;
+      background: var(--surface);
+    }
+    .hero-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .takeaway-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+    }
+    .takeaway-card .label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    .takeaway-card p {
+      font-size: 15px;
+      color: var(--text);
+      margin: 0;
+      line-height: 1.6;
+    }
 
     /* Tabs */
     .tabs {
@@ -614,20 +669,37 @@
   <main class="main" id="main">
     <div class="container">
       <header class="hero" id="hero">
-        <div class="trainer-row">
-          <img src="assets/trainer-ritesh-hegde.jpg" alt="Ritesh Hegde" class="trainer-avatar">
-          <div class="trainer-info">
-            <div class="name">Ritesh Hegde</div>
-            <div class="role">Google Workspace Studio Automation · <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank">LinkedIn</a></div>
+        <div class="hero-grid">
+          <div class="hero-left">
+            <div class="trainer-card">
+              <img src="assets/trainer-ritesh-hegde-large.jpg" alt="Ritesh Hegde" class="trainer-avatar">
+              <div class="trainer-info">
+                <div class="name">Ritesh Hegde</div>
+                <div class="role">Google Workspace Studio Automation · <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank">LinkedIn</a></div>
+              </div>
+            </div>
+
+            <div class="eyebrow">
+              <span class="pulse"></span>
+              <span id="hero-eyebrow">Google Workspace Studio Automation</span>
+            </div>
+            <h1 id="lesson-headline">Stop Repeating Yourself</h1>
+            <p class="subline" id="lesson-subline"><span class="bracket">(</span> Let Gemini sort your tickets. You handle only the urgent ones. <span class="bracket">)</span></p>
+          </div>
+
+          <div class="hero-right">
+            <div class="hero-image">
+              <img id="hero-image" src="assets/verify-1.png" alt="Workspace Studio activity history" onerror="this.style.display='none'">
+            </div>
+            <div class="takeaway-card">
+              <div class="label">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                One-line takeaway
+              </div>
+              <p id="hero-takeaway">Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent.</p>
+            </div>
           </div>
         </div>
-
-        <div class="eyebrow">
-          <span class="pulse"></span>
-          Google Workspace Studio Automation
-        </div>
-        <h1 id="lesson-headline">Stop Repeating Yourself</h1>
-        <p class="subline"><span class="bracket">(</span> Let Gemini sort your tickets. You handle only the urgent ones. <span class="bracket">)</span></p>
       </header>
 
       <div class="tabs" id="tabs">
@@ -915,9 +987,21 @@
     function renderHero() {
       const lesson = course.lessons[currentLesson];
       document.getElementById('lesson-headline').textContent = lesson.headline;
-      const subline = document.querySelector('.subline');
-      subline.innerHTML = `<span class="bracket">(</span> ${lesson.subline.replace(/[()]/g, '')} <span class="bracket">)</span>`;
-      document.querySelector('.eyebrow').innerHTML = `<span class="pulse"></span> ${lesson.eyebrow}`;
+      const subline = document.getElementById('lesson-subline');
+      subline.innerHTML = `\u003cspan class="bracket"\u003e(\u003c/span\u003e ${lesson.subline.replace(/[()]/g, '')} \u003cspan class="bracket"\u003e)\u003c/span\u003e`;
+      const eyebrowEl = document.getElementById('hero-eyebrow');
+      eyebrowEl.textContent = lesson.eyebrow;
+
+      const heroData = {
+        "1": { image: "assets/verify-1.png", alt: "Workspace Studio activity history", takeaway: "Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent." },
+        "2": { image: "assets/verify-7.png", alt: "Classified Google Sheet results", takeaway: "Business automation is not about better chatbots — it is about AI systems that understand goals, plan, act with tools, observe results, and stay under your guardrails." }
+      };
+      const data = heroData[lesson.id] || heroData["1"];
+      const heroImg = document.getElementById('hero-image');
+      heroImg.src = data.image;
+      heroImg.alt = data.alt;
+      heroImg.style.display = 'block';
+      document.getElementById('hero-takeaway').textContent = data.takeaway;
     }
 
     function renderTabButtons() {
