@@ -320,6 +320,34 @@
     }
     .objective-item .check svg { width: 11px; height: 11px; }
 
+    /* Two-col / info cards */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .info-card:hover { transform: translateY(-3px); border-color: var(--border-hover); }
+    .info-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+    .info-card ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .info-card li { margin-bottom: 8px; }
+
     /* Framework cards */
     .framework-grid {
       display: grid;
