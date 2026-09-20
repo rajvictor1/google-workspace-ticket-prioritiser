@@ -467,25 +467,87 @@
     .step h4 { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
     .step p { font-size: 13px; color: var(--text-muted); margin: 0; }
 
-    /* Screenshot */
+    /* Screenshot gallery */
+    .screenshot-gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
     .screenshot {
-      margin: 18px 0;
       border-radius: var(--radius-sm);
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--surface-2);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
     }
+    .screenshot:hover { transform: translateY(-3px); border-color: var(--border-hover); }
     .screenshot img {
       width: 100%;
-      height: auto;
+      height: 220px;
+      object-fit: cover;
       display: block;
     }
     .screenshot-caption {
-      padding: 12px 16px;
-      font-size: 13px;
+      padding: 12px 14px;
+      font-size: 12px;
       color: var(--text-muted);
       border-top: 1px solid var(--border);
+      background: var(--surface);
     }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(5,5,8,0.92);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    .lightbox-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .lightbox-prev { left: 24px; }
+    .lightbox-next { right: 24px; }
 
     /* Table */
     .table-wrap {
@@ -760,10 +822,33 @@
           trainerDesc: "Ritesh demonstrated how to turn repetitive Google Workspace tasks — ticket sorting, document triage, meeting notes, and end-of-day reports — into hands-free Studio flows powered by Gemini. The focus is on practical automation you can ship inside your existing Workspace environment.",
           completed: false,
           screenshots: [
-            { file: "assets/verify-6.png", caption: "Workspace Studio flows list showing GOC Lab B – Ticket Prioritiser" },
-            { file: "assets/verify-1.png", caption: "Live workflow activity history with completed executions" },
-            { file: "assets/verify-7.png", caption: "Classified Google Sheet with High and Low priority test results" }
-          ],
+            { file: "assets/Screenshot-2026-09-20-at-10.36.48-AM.png", caption: "Build screenshot 1" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.01-AM.png", caption: "Build screenshot 2" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.06-AM.png", caption: "Build screenshot 3" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.13-AM.png", caption: "Build screenshot 4" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.19-AM.png", caption: "Build screenshot 5" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.25-AM.png", caption: "Build screenshot 6" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.32-AM.png", caption: "Build screenshot 7" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.40-AM.png", caption: "Build screenshot 8" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.46-AM.png", caption: "Build screenshot 9" },
+            { file: "assets/Screenshot-2026-09-20-at-10.37.53-AM.png", caption: "Build screenshot 10" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.00-AM.png", caption: "Build screenshot 11" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.05-AM.png", caption: "Build screenshot 12" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.15-AM.png", caption: "Build screenshot 13" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.21-AM.png", caption: "Build screenshot 14" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.28-AM.png", caption: "Build screenshot 15" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.38-AM.png", caption: "Build screenshot 16" },
+            { file: "assets/Screenshot-2026-09-20-at-10.38.49-AM.png", caption: "Build screenshot 17" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.05-AM.png", caption: "Build screenshot 18" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.12-AM.png", caption: "Build screenshot 19" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.20-AM.png", caption: "Build screenshot 20" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.27-AM.png", caption: "Build screenshot 21" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.35-AM.png", caption: "Build screenshot 22" },
+            { file: "assets/Screenshot-2026-09-20-at-10.39.46-AM.png", caption: "Build screenshot 23" },
+            { file: "assets/Screenshot-2026-09-20-at-10.40.16-AM.png", caption: "Build screenshot 24" },
+            { file: "assets/Screenshot-2026-09-20-at-10.40.39-AM.png", caption: "Build screenshot 25" },
+            { file: "assets/Screenshot-2026-09-20-at-10.59.07-AM.png", caption: "Build screenshot 26" }
+          ,
           learn: [
             {
               type: "objectives",
@@ -1020,7 +1105,7 @@
       document.getElementById('trainer-desc').textContent = lesson.trainerDesc;
 
       const heroData = {
-        "1": { image: "assets/verify-1.png", alt: "Workspace Studio activity history", takeaway: "Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent." },
+        "1": { image: "assets/Screenshot-2026-09-20-at-10.37.32-AM.png", alt: "Workspace Studio flow with extract step", takeaway: "Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent." },
         "2": { image: "assets/verify-7.png", alt: "Classified Google Sheet results", takeaway: "Business automation is not about better chatbots — it is about AI systems that understand goals, plan, act with tools, observe results, and stay under your guardrails." }
       };
       const data = heroData[lesson.id] || heroData["1"];
@@ -1047,13 +1132,15 @@
         if (lesson.screenshots.length > 0) {
           container.innerHTML += `
             <div class="content-block">
-              <h3>Screenshots</h3>
-              ${lesson.screenshots.map(s => `
-                <div class="screenshot">
-                  <img src="${s.file}" alt="${s.caption}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'padding:40px;text-align:center;color:var(--text-muted);font-size:13px;\'>${s.caption} (image not found)</div>';">
-                  <div class="screenshot-caption">${s.caption}</div>
-                </div>
-              `).join('')}
+              <h3>Build screenshots</h3>
+              <div class="screenshot-gallery">
+                ${lesson.screenshots.map((s, idx) => `
+                  <div class="screenshot" onclick="openLightbox(${idx})">
+                    <img src="${s.file}" alt="${s.caption}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'padding:40px;text-align:center;color:var(--text-muted);font-size:13px;\'>${s.caption} (image not found)</div>';">
+                    <div class="screenshot-caption">${s.caption}</div>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           `;
         }
@@ -1282,8 +1369,48 @@
 
     loadProgress();
     renderAll();
+    // Lightbox
+    let lightboxIndex = 0;
+    function openLightbox(idx) {
+      lightboxIndex = idx;
+      updateLightbox();
+      document.getElementById('lightbox').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox(e) {
+      if (e && (e.target.classList.contains('lightbox-nav') || e.target.tagName === 'IMG')) return;
+      document.getElementById('lightbox').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+    function changeLightbox(dir, e) {
+      e.stopPropagation();
+      const lesson = course.lessons[currentLesson];
+      lightboxIndex = (lightboxIndex + dir + lesson.screenshots.length) % lesson.screenshots.length;
+      updateLightbox();
+    }
+    function updateLightbox() {
+      const lesson = course.lessons[currentLesson];
+      const s = lesson.screenshots[lightboxIndex];
+      document.getElementById('lightbox-img').src = s.file;
+      document.getElementById('lightbox-img').alt = s.caption;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (!document.getElementById('lightbox').classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') changeLightbox(-1, { stopPropagation: () => {} });
+      if (e.key === 'ArrowRight') changeLightbox(1, { stopPropagation: () => {} });
+    });
+
     window.addEventListener('resize', () => { if (window.innerWidth > 900) toggleSidebar(false); });
   </script>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lightbox-close" onclick="closeLightbox(event)" title="Close">×</button>
+    <button class="lightbox-nav lightbox-prev" onclick="changeLightbox(-1, event)">‹</button>
+    <button class="lightbox-nav lightbox-next" onclick="changeLightbox(1, event)">›</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
 
 </body>
 </html>
