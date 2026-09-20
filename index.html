@@ -4,32 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RitZ7 Workshop | Google Workspace Studio Automation</title>
-  <meta name="description" content="RitZ7 Workshop: A live Google Workspace Studio automation that classifies support tickets with Gemini and only alerts you for high-priority issues.">
+  <meta name="description" content="RitZ7 Workshop: learn to build business automations with Google Workspace Studio and AI.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #08080a;
-      --surface: #111114;
-      --surface-2: #1a1a1f;
-      --surface-3: #24242b;
-      --border: rgba(255,255,255,0.08);
+      --bg: #050507;
+      --surface: #0c0c10;
+      --surface-2: #141419;
+      --surface-3: #1c1c24;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.12);
       --text: #f5f5f7;
-      --text-muted: #8b8b96;
+      --text-muted: #8a8a95;
       --accent: #a78bfa;
       --accent-2: #60a5fa;
       --accent-glow: rgba(167,139,250,0.35);
       --green: #34d399;
-      --green-dim: rgba(52,211,153,0.15);
+      --green-dim: rgba(52,211,153,0.12);
       --red: #f87171;
-      --red-dim: rgba(248,113,113,0.15);
+      --red-dim: rgba(248,113,113,0.12);
       --yellow: #fbbf24;
-      --yellow-dim: rgba(251,191,36,0.15);
-      --blue: #60a5fa;
-      --blue-dim: rgba(96,165,250,0.15);
-      --radius: 20px;
-      --shadow: 0 24px 60px rgba(0,0,0,0.55);
+      --yellow-dim: rgba(251,191,36,0.12);
+      --radius: 18px;
+      --radius-sm: 12px;
+      --shadow: 0 24px 70px rgba(0,0,0,0.65);
     }
 
     * { box-sizing: border-box; }
@@ -40,11 +40,13 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Ambient background */
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Ambient */
     .ambient {
       position: fixed;
       inset: 0;
@@ -55,545 +57,491 @@
     .orb {
       position: absolute;
       border-radius: 50%;
-      filter: blur(80px);
-      opacity: 0.35;
-      animation: float 18s ease-in-out infinite;
+      filter: blur(90px);
+      opacity: 0.28;
+      animation: float 22s ease-in-out infinite;
     }
-    .orb-1 {
-      width: 500px; height: 500px;
-      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-      top: -10%; right: -5%;
-      animation-delay: 0s;
-    }
-    .orb-2 {
-      width: 420px; height: 420px;
-      background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%);
-      bottom: 10%; left: -8%;
-      animation-delay: -6s;
-    }
-    .orb-3 {
-      width: 300px; height: 300px;
-      background: radial-gradient(circle, var(--green) 0%, transparent 70%);
-      top: 45%; left: 35%;
-      opacity: 0.2;
-      animation-delay: -12s;
-    }
-    .grid-floor {
-      position: absolute;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 60px 60px;
-      mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);
-      animation: gridMove 30s linear infinite;
-    }
+    .orb-1 { width: 520px; height: 520px; background: radial-gradient(circle, var(--accent) 0%, transparent 70%); top: -8%; right: -6%; }
+    .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, var(--accent-2) 0%, transparent 70%); bottom: 8%; left: -8%; animation-delay: -7s; }
+    .orb-3 { width: 280px; height: 280px; background: radial-gradient(circle, var(--green) 0%, transparent 70%); top: 48%; left: 40%; opacity: 0.16; animation-delay: -14s; }
     @keyframes float {
       0%, 100% { transform: translate(0, 0) scale(1); }
       33% { transform: translate(30px, -30px) scale(1.05); }
       66% { transform: translate(-20px, 20px) scale(0.98); }
     }
-    @keyframes gridMove {
-      0% { transform: perspective(600px) rotateX(60deg) translateY(0); }
-      100% { transform: perspective(600px) rotateX(60deg) translateY(60px); }
-    }
 
-    a { color: var(--accent-2); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 24px;
-      position: relative;
-      z-index: 2;
-    }
-
-    /* Navbar */
-    .nav {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(8,8,10,0.75);
+    /* Layout */
+    .app { display: flex; min-height: 100vh; position: relative; z-index: 2; }
+    .sidebar {
+      width: 320px;
+      background: rgba(12,12,16,0.85);
+      border-right: 1px solid var(--border);
       backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
+      position: fixed;
+      inset: 0 auto 0 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+      transition: transform 0.3s ease;
     }
-    .nav-inner {
+    .sidebar.hidden { transform: translateX(-100%); }
+    .sidebar-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      height: 72px;
-    }
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-weight: 800;
-      font-size: 18px;
-      color: var(--text);
+      font-size: 17px;
       font-family: 'Space Grotesk', sans-serif;
+      color: var(--text);
+      margin-bottom: 18px;
     }
-    .nav-logo .logo-shape {
-      width: 36px; height: 36px;
-      border-radius: 10px;
+    .sidebar-logo .logo-shape {
+      width: 32px; height: 32px;
+      border-radius: 9px;
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
       display: grid;
       place-items: center;
-      box-shadow: 0 8px 24px var(--accent-glow);
+      box-shadow: 0 6px 20px var(--accent-glow);
     }
-    .nav-links {
-      display: flex;
-      gap: 32px;
-      font-size: 14px;
-      font-weight: 500;
+    .progress-box { margin-bottom: 6px; }
+    .progress-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+    .progress-bar { height: 5px; background: var(--surface-3); border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 10px; transition: width 0.4s ease; }
+    .lesson-list { flex: 1; overflow-y: auto; padding: 12px 14px; }
+    .lesson-item {
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      border: 1px solid transparent;
+      margin-bottom: 8px;
+    }
+    .lesson-item:hover { background: var(--surface-2); }
+    .lesson-item.active { background: var(--surface-2); border-color: rgba(167,139,250,0.3); }
+    .lesson-item-top { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .lesson-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--surface-3);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .lesson-item.active .lesson-num { background: var(--accent); color: #050507; }
+    .lesson-status { margin-left: auto; }
+    .lesson-status svg { width: 16px; height: 16px; color: var(--green); }
+    .lesson-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+    .lesson-item.active .lesson-title { color: var(--text); }
+    .sidebar-footer { padding: 14px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+    .sidebar-footer a { color: var(--accent); }
+
+    .main { flex: 1; margin-left: 320px; min-width: 0; }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* Mobile nav */
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: rgba(5,5,7,0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      z-index: 60;
       align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
     }
-    .nav-links a { color: var(--text-muted); transition: color 0.2s; }
-    .nav-links a:hover { color: var(--text); text-decoration: none; }
-    .nav-cta {
-      padding: 10px 20px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-      color: #08080a !important;
-      font-weight: 700;
-      font-size: 13px;
-      box-shadow: 0 8px 24px var(--accent-glow);
-      transition: transform 0.2s, box-shadow 0.2s;
+    .mobile-nav .burger {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
     }
-    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px var(--accent-glow); text-decoration: none; }
+    .mobile-nav .logo-text { font-weight: 800; font-size: 16px; font-family: 'Space Grotesk', sans-serif; }
 
     /* Hero */
-    .hero {
-      padding: 100px 0 80px;
-      position: relative;
-    }
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 60px;
+    .hero { padding: 60px 0 42px; }
+    .trainer-row {
+      display: flex;
       align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
     }
+    .trainer-avatar {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(167,139,250,0.4);
+      box-shadow: 0 8px 24px var(--accent-glow);
+    }
+    .trainer-info .name { font-weight: 800; font-size: 15px; }
+    .trainer-info .role { font-size: 13px; color: var(--text-muted); }
+    .trainer-info a { color: var(--accent); font-size: 13px; }
+
     .eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 7px 14px;
-      background: rgba(167,139,250,0.12);
-      border: 1px solid rgba(167,139,250,0.25);
+      padding: 6px 12px;
+      background: rgba(167,139,250,0.1);
+      border: 1px solid rgba(167,139,250,0.2);
       color: var(--accent);
-      border-radius: 24px;
-      font-size: 12px;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
-      margin-bottom: 24px;
-      width: fit-content;
+      letter-spacing: 0.7px;
+      margin-bottom: 18px;
     }
     .eyebrow .pulse {
-      width: 7px; height: 7px;
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: var(--accent);
-      box-shadow: 0 0 12px var(--accent);
+      box-shadow: 0 0 10px var(--accent);
       animation: pulse 2s infinite;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.6; transform: scale(0.85); }
-    }
-    .hero h1 {
-      font-size: clamp(42px, 5.5vw, 68px);
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    h1 {
+      font-size: clamp(36px, 5vw, 56px);
       line-height: 1.05;
       font-weight: 800;
-      margin: 0 0 22px;
+      margin: 0 0 10px;
       letter-spacing: -0.03em;
     }
-    .hero h1 span { color: var(--accent); }
-    .hero .lead {
-      font-size: 18px;
+    h1 .accent { color: var(--accent); }
+    .subline {
+      font-size: 17px;
       color: var(--text-muted);
-      margin: 0 0 32px;
-      max-width: 560px;
+      margin: 0 0 28px;
+      line-height: 1.55;
     }
-    .hero-meta {
-      display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-    .hero-meta span { display: flex; align-items: center; gap: 8px; }
+    .subline .bracket { font-size: 14px; color: var(--text-muted); opacity: 0.7; }
 
-    /* Glass card */
-    .glass-card {
-      background: rgba(17,17,20,0.65);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      backdrop-filter: blur(16px);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    .hero-card .card-head {
+    /* Tabs */
+    .tabs {
       display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 16px 20px;
-      background: rgba(255,255,255,0.03);
+      gap: 8px;
+      margin: 32px 0 28px;
       border-bottom: 1px solid var(--border);
-      font-size: 13px;
+      padding-bottom: 0;
+    }
+    .tab {
+      padding: 12px 18px;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
       font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
     }
-    .hero-card .card-head .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
-    .hero-card .card-body { padding: 24px; }
-    .hero-card .chat-bubble {
-      background: rgba(52,211,153,0.12);
-      border: 1px solid rgba(52,211,153,0.25);
-      border-radius: 16px 16px 16px 4px;
-      padding: 18px;
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-    .hero-card .chat-bubble strong { color: var(--text); }
-    .hero-card .chat-bubble .tag {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-top: 8px;
-      margin-right: 6px;
-    }
-    .tag-high { background: var(--red-dim); color: var(--red); }
-    .tag-billing { background: rgba(251,191,36,0.15); color: var(--yellow); }
-    .hero-card .row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 14px;
-    }
-    .hero-card .row:last-child { border-bottom: 0; }
-    .hero-card .label { color: var(--text-muted); }
-    .hero-card .value { font-weight: 600; }
-
-    /* Section styling */
-    section { padding: 90px 0; position: relative; }
-    section.alt { background: rgba(255,255,255,0.015); }
-    .section-head {
-      max-width: 720px;
-      margin-bottom: 56px;
-    }
-    .section-head h2 {
-      font-size: clamp(32px, 4vw, 46px);
-      font-weight: 800;
-      line-height: 1.1;
-      margin: 0 0 14px;
-      letter-spacing: -0.02em;
-    }
-    .section-head p {
-      font-size: 18px;
-      color: var(--text-muted);
-      margin: 0;
+    .tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .tab.active { color: var(--text); background: var(--surface-2); }
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
     }
 
-    /* Problem / Solution */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .info-card {
+    /* Content */
+    .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+    .tab-panel.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .content-block {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s, border-color 0.3s;
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      margin-bottom: 16px;
     }
-    .info-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.15); }
-    .info-card h3 {
-      font-size: 20px;
+    .content-block h3 {
+      font-size: 17px;
       font-weight: 700;
-      margin: 0 0 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      margin: 0 0 12px;
+      color: var(--text);
     }
-    .info-card ul {
+    .content-block p {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin: 0 0 12px;
+    }
+    .content-block p:last-child { margin-bottom: 0; }
+    .content-block ul {
       margin: 0;
       padding-left: 20px;
       color: var(--text-muted);
+      font-size: 15px;
     }
-    .info-card li { margin-bottom: 10px; }
+    .content-block li { margin-bottom: 8px; }
+    .content-block strong { color: var(--text); font-weight: 600; }
+
+    .objective-list {
+      display: grid;
+      gap: 10px;
+    }
+    .objective-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface-2);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .objective-item .check {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      color: var(--green);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .objective-item .check svg { width: 11px; height: 11px; }
 
     /* Framework cards */
     .framework-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
+      gap: 14px;
+      margin-bottom: 16px;
     }
     .framework-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
-      position: relative;
+      border-top: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 20px;
+      transition: transform 0.25s, border-color 0.25s;
     }
-    .framework-card:hover { transform: translateY(-8px) rotateX(2deg); box-shadow: 0 32px 70px rgba(0,0,0,0.65); }
-    .framework-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: var(--radius);
-      padding: 1px;
-      background: linear-gradient(135deg, var(--accent), transparent 40%, transparent);
-      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .framework-card:hover::before { opacity: 1; }
-    .framework-card.blue { border-top: 3px solid var(--blue); }
-    .framework-card.red { border-top: 3px solid var(--red); }
-    .framework-card.yellow { border-top: 3px solid var(--yellow); }
-    .framework-card.green { border-top: 3px solid var(--green); }
-    .framework-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 16px;
-      margin-bottom: 18px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-    }
-    .framework-card.blue .framework-icon { background: var(--blue); }
-    .framework-card.red .framework-icon { background: var(--red); }
-    .framework-card.yellow .framework-icon { background: var(--yellow); }
-    .framework-card.green .framework-icon { background: var(--green); }
-    .framework-card h4 {
-      font-size: 20px;
-      font-weight: 700;
-      margin: 0 0 12px;
-    }
-    .framework-card p {
-      font-size: 14px;
-      color: var(--text-muted);
-      margin: 0;
-    }
-    .framework-card ul {
-      margin: 14px 0 0;
-      padding-left: 18px;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-    .framework-card li { margin-bottom: 7px; }
+    .framework-card:hover { transform: translateY(-5px); border-color: var(--border-hover); }
+    .framework-card.blue { border-top-color: var(--accent-2); }
+    .framework-card.red { border-top-color: var(--red); }
+    .framework-card.yellow { border-top-color: var(--yellow); }
+    .framework-card.green { border-top-color: var(--green); }
+    .framework-card h4 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+    .framework-card p { font-size: 13px; color: var(--text-muted); margin: 0 0 10px; }
+    .framework-card ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--text-muted); }
+    .framework-card li { margin-bottom: 5px; }
 
     /* Steps */
-    .steps {
-      display: grid;
-      gap: 18px;
-    }
     .step {
       display: grid;
-      grid-template-columns: 56px 1fr;
-      gap: 22px;
+      grid-template-columns: 44px 1fr;
+      gap: 16px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+      margin-bottom: 12px;
       transition: transform 0.2s;
     }
-    .step:hover { transform: translateX(6px); }
+    .step:hover { transform: translateX(5px); }
     .step-num {
-      width: 56px; height: 56px;
+      width: 44px; height: 44px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
-      color: #08080a;
+      color: #050507;
       display: grid;
       place-items: center;
       font-weight: 900;
-      font-size: 20px;
-      box-shadow: 0 8px 24px var(--accent-glow);
+      font-size: 17px;
+      box-shadow: 0 6px 18px var(--accent-glow);
+      flex-shrink: 0;
     }
-    .step h4 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
-    .step p { font-size: 15px; color: var(--text-muted); margin: 0; }
+    .step h4 { font-size: 15px; font-weight: 700; margin: 0 0 5px; }
+    .step p { font-size: 14px; color: var(--text-muted); margin: 0; }
+
+    /* Screenshot */
+    .screenshot {
+      margin: 18px 0;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .screenshot img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .screenshot-caption {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
 
     /* Table */
     .table-wrap {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      box-shadow: var(--shadow);
+      margin: 18px 0;
     }
-    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
     .data-table th {
       background: var(--surface-2);
       text-align: left;
-      padding: 16px 18px;
+      padding: 12px 14px;
       font-weight: 700;
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.6px;
       color: var(--text-muted);
       border-bottom: 1px solid var(--border);
     }
     .data-table td {
-      padding: 16px 18px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--border);
       color: var(--text-muted);
     }
     .data-table tr:last-child td { border-bottom: 0; }
-    .data-table .issue { color: var(--text); font-weight: 500; }
     .badge {
       display: inline-block;
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 20px;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
     .badge-high { background: var(--red-dim); color: var(--red); }
-    .badge-medium { background: var(--yellow-dim); color: var(--yellow); }
-    .badge-low { background: var(--blue-dim); color: var(--blue); }
-    .badge-billing { background: rgba(251,191,36,0.12); color: var(--yellow); }
+    .badge-low { background: rgba(96,165,250,0.12); color: var(--accent-2); }
+    .badge-account { background: rgba(96,165,250,0.12); color: var(--accent-2); }
+    .badge-billing { background: var(--yellow-dim); color: var(--yellow); }
     .badge-technical { background: rgba(255,255,255,0.08); color: var(--text-muted); }
-    .badge-account { background: var(--blue-dim); color: var(--blue); }
 
-    /* Verification gallery */
-    .verification-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-    .verification-card {
+    /* FAQ */
+    .faq-item {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
       overflow: hidden;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s;
     }
-    .verification-card:hover { transform: translateY(-6px); }
-    .verification-card img {
+    .faq-q {
       width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface-2);
-    }
-    .verification-card .v-body { padding: 22px; }
-    .verification-card .check {
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      background: var(--green-dim);
-      color: var(--green);
-      display: grid;
-      place-items: center;
-      margin-bottom: 12px;
-    }
-    .verification-card h4 { font-size: 16px; font-weight: 700; margin: 0 0 8px; }
-    .verification-card p { font-size: 13px; color: var(--text-muted); margin: 0; }
-
-    /* Summary */
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
-    }
-    .summary-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s;
-    }
-    .summary-card:hover { transform: translateY(-4px); }
-    .summary-card h4 {
-      font-size: 12px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: var(--accent);
-      margin: 0 0 14px;
-    }
-    .summary-card p { font-size: 15px; color: var(--text); margin: 0; font-weight: 500; }
-
-    /* Links section */
-    .links-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    .link-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      box-shadow: var(--shadow);
-      transition: transform 0.3s, border-color 0.3s;
-    }
-    .link-card:hover { transform: translateY(-4px); border-color: rgba(167,139,250,0.3); }
-    .link-card h3 { font-size: 20px; font-weight: 700; margin: 0 0 12px; }
-    .link-card p { font-size: 14px; color: var(--text-muted); margin: 0 0 18px; }
-    .link-card a {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 18px;
-      border-radius: 24px;
-      background: rgba(167,139,250,0.12);
-      border: 1px solid rgba(167,139,250,0.25);
-      color: var(--accent);
+      padding: 16px 18px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 15px;
       font-weight: 600;
-      font-size: 13px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       transition: background 0.2s;
     }
-    .link-card a:hover { background: rgba(167,139,250,0.2); text-decoration: none; }
-
-    /* Footer */
-    footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 48px 0;
-      text-align: center;
+    .faq-q:hover { background: var(--surface-2); }
+    .faq-q svg { width: 18px; height: 18px; color: var(--text-muted); transition: transform 0.2s; flex-shrink: 0; margin-left: 12px; }
+    .faq-item.open .faq-q svg { transform: rotate(180deg); }
+    .faq-a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .faq-item.open .faq-a { max-height: 500px; }
+    .faq-a-inner {
+      padding: 0 18px 16px;
       font-size: 14px;
       color: var(--text-muted);
-      position: relative;
-      z-index: 2;
+      line-height: 1.65;
     }
-    footer strong { color: var(--text); }
-    footer a { color: var(--accent); }
+
+    /* Lesson nav buttons */
+    .lesson-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 36px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .lesson-nav button {
+      padding: 12px 22px;
+      border-radius: 24px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lesson-nav button:hover { background: var(--surface-3); border-color: var(--border-hover); }
+    .lesson-nav button.primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #050507;
+      border-color: transparent;
+    }
+    .lesson-nav button.primary:hover { box-shadow: 0 8px 24px var(--accent-glow); }
+
+    /* Footer */
+    .site-footer {
+      margin-top: 60px;
+      padding: 28px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .site-footer strong { color: var(--text); }
+    .site-footer a { color: var(--accent); }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 45;
+      backdrop-filter: blur(4px);
+    }
+    .overlay.show { display: block; }
 
     /* Responsive */
-    @media (max-width: 960px) {
-      .hero-grid { grid-template-columns: 1fr; gap: 48px; }
-      .two-col, .links-grid { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .mobile-nav { display: flex; }
+      .sidebar { top: 60px; height: calc(100vh - 60px); transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding-top: 60px; }
+      .container { padding: 0 18px; }
       .framework-grid { grid-template-columns: repeat(2, 1fr); }
-      .verification-grid { grid-template-columns: 1fr; }
-      .summary-grid { grid-template-columns: repeat(2, 1fr); }
-      .nav-links { display: none; }
-      .hero h1 { font-size: clamp(36px, 8vw, 52px); }
+      h1 { font-size: clamp(32px, 8vw, 46px); }
+      .hero { padding: 34px 0 30px; }
+      .tabs { overflow-x: auto; }
     }
-    @media (max-width: 540px) {
-      .framework-grid, .summary-grid { grid-template-columns: 1fr; }
+    @media (max-width: 560px) {
+      .framework-grid, .trainer-row { flex-wrap: wrap; }
+      .framework-grid { grid-template-columns: 1fr; }
       .step { grid-template-columns: 1fr; }
-      .step-num { margin-bottom: 14px; }
-    }
-
-    @media print {
-      .nav, .ambient, footer { display: none; }
-      section { padding: 32px 0; page-break-inside: avoid; }
-      .hero { padding-top: 20px; }
+      .step-num { margin-bottom: 10px; }
+      .lesson-nav { flex-direction: column; }
     }
   </style>
 </head>
@@ -603,379 +551,599 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <div class="grid-floor"></div>
   </div>
 
-  <nav class="nav">
-    <div class="container nav-inner">
-      <div class="nav-logo">
+  <div class="mobile-nav">
+    <div class="burger" onclick="toggleSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </div>
+    <div class="logo-text">RitZ7 Workshop</div>
+    <div style="width:36px;"></div>
+  </div>
+
+  <div class="overlay" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
         <div class="logo-shape">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#08080a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#050507" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </div>
         RitZ7 Workshop
       </div>
-      <div class="nav-links">
-        <a href="#problem">Problem</a>
-        <a href="#framework">Framework</a>
-        <a href="#build">Build</a>
-        <a href="#results">Results</a>
-        <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank" class="nav-cta">Open live flow →</a>
+      <div class="progress-box">
+        <div class="progress-label">Your progress · <span id="progress-text">0%</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
       </div>
     </div>
-  </nav>
+    <div class="lesson-list" id="lesson-list"></div>
+    <div class="sidebar-footer">
+      Built by <a href="https://www.brandops.site" target="_blank">Rajesh Kumar</a> · BrandOps Site
+    </div>
+  </aside>
 
-  <header class="hero">
-    <div class="container hero-grid">
-      <div>
+  <main class="main" id="main">
+    <div class="container">
+      <header class="hero" id="hero">
+        <div class="trainer-row">
+          <img src="assets/trainer-ritesh-hegde.jpg" alt="Ritesh Hegde" class="trainer-avatar">
+          <div class="trainer-info">
+            <div class="name">Ritesh Hegde</div>
+            <div class="role">Google Workspace Studio Automation · <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank">LinkedIn</a></div>
+          </div>
+        </div>
+
         <div class="eyebrow">
           <span class="pulse"></span>
           Google Workspace Studio Automation
         </div>
-        <h1>Stop Repeating Yourself</h1>
-        <p class="lead" style="font-size:17px;"><span style="font-size:14px; color:var(--text-muted);">(</span> Let Gemini sort your tickets. You handle only the urgent ones. <span style="font-size:14px; color:var(--text-muted);">)</span></p>
-        <div class="hero-meta">
-          <span style="display:flex;align-items:center;gap:10px;">
-            <img src="assets/trainer-ritesh-hegde.jpg" alt="Ritesh Hegde" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);">
-            <span>Trainer: <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank" style="font-weight:600;color:var(--text);">Ritesh Hegde</a></span>
-          </span>
-          <span>🛠️ Built in Workspace Studio</span>
-          <span>✅ Active & tested live</span>
-        </div>
+        <h1 id="lesson-headline">Stop Repeating Yourself</h1>
+        <p class="subline"><span class="bracket">(</span> Let Gemini sort your tickets. You handle only the urgent ones. <span class="bracket">)</span></p>
+      </header>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="learn" onclick="switchTab('learn')">Learn</button>
+        <button class="tab" data-tab="highlights" onclick="switchTab('highlights')">Key Highlights</button>
+        <button class="tab" data-tab="faqs" onclick="switchTab('faqs')">FAQs</button>
       </div>
 
-      <div class="glass-card hero-card">
-        <div class="card-head">
-          <span class="dot"></span>
-          New high-priority ticket detected
-        </div>
-        <div class="card-body">
-          <div class="chat-bubble">
-            <strong>Checkout failing for all customers and no payments can be completed.</strong>
-            <div>
-              <span class="tag tag-high">High Priority</span>
-              <span class="tag tag-billing">Billing</span>
+      <div id="tab-content">
+        <!-- Content injected via JS -->
+      </div>
+
+      <div class="lesson-nav" id="lesson-nav">
+        <button onclick="prevLesson()">← Previous lesson</button>
+        <button class="primary" onclick="markComplete()">Mark complete ✓</button>
+        <button onclick="nextLesson()">Next lesson →</button>
+      </div>
+
+      <footer class="site-footer">
+        Built by <strong>Rajesh Kumar</strong> · Founder, <a href="https://www.brandops.site" target="_blank">BrandOps Site</a>
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    const course = {
+      title: "RitZ7 Workshop",
+      subtitle: "Google Workspace Studio Automation",
+      lessons: [
+        {
+          id: 1,
+          shortTitle: "Ticket Prioritiser",
+          headline: "Stop Repeating Yourself",
+          subline: "( Let Gemini sort your tickets. You handle only the urgent ones. )",
+          eyebrow: "Google Workspace Studio Automation",
+          completed: false,
+          screenshots: [
+            { file: "assets/verify-6.png", caption: "Workspace Studio flows list showing GOC Lab B – Ticket Prioritiser" },
+            { file: "assets/verify-1.png", caption: "Live workflow activity history with completed executions" },
+            { file: "assets/verify-7.png", caption: "Classified Google Sheet with High and Low priority test results" }
+          ],
+          learn: [
+            {
+              type: "objectives",
+              title: "What you will build",
+              items: [
+                "A Workspace Studio flow that watches a Google Sheet for new tickets",
+                "Gemini extraction of Priority, Category, and Summary",
+                "Automatic write-back to the same spreadsheet row",
+                "Google Chat alert only when Priority = High"
+              ]
+            },
+            {
+              type: "text",
+              title: "Workflow opportunity",
+              body: "Every support ticket arrives with the same urgency in the inbox, but not every ticket deserves the same attention. Someone has to read, judge, and route each one — a repetitive decision that burns time and invites bias."
+            },
+            {
+              type: "twoCol",
+              left: { title: "The problem", items: ["Tickets stack up faster than they can be triaged.", "Loud language gets treated as high priority.", "Repetitive sorting pulls people away from resolution work.", "High-priority issues may sit unnoticed among noisy low-priority ones."] },
+              right: { title: "The solution", items: ["Workspace Studio watches the Google Sheet for new ticket rows.", "Gemini judges impact, not tone.", "The flow writes Priority and Category back to the same row.", "Only High-priority tickets trigger a Google Chat notification."] }
+            },
+            {
+              type: "framework",
+              title: "The Four-Filter Framework",
+              cards: [
+                { color: "blue", num: "1", title: "Trigger", body: "A new ticket row appears in the private Google Sheet.", items: ["Watches the Issue description column", "Ignores its own write-back", "Fires within seconds"] },
+                { color: "red", num: "2", title: "Decision", body: "Gemini extracts three fields from the ticket text.", items: ["Priority: High / Medium / Low", "Category: Billing, Technical, Policy, Account Access, Other", "Summary: ≤15 words"] },
+                { color: "yellow", num: "3", title: "Action", body: "The flow updates the original row with Gemini’s output.", items: ["Matches row by Timestamp", "Writes Priority column", "Writes Category column"] },
+                { color: "green", num: "4", title: "Handoff", body: "Only High-priority tickets interrupt a person.", items: ["Check if Priority = High", "Send private Chat alert", "Medium and Low stay silent"] }
+              ]
+            },
+            {
+              type: "steps",
+              title: "How it was built in six steps",
+              items: [
+                { num: "1", title: "Created the private Google Sheet", body: "Columns: Timestamp, Issue description, Reported by, Priority, Category. Imported three sample support tickets from the CSV." },
+                { num: "2", title: "Set the trigger", body: "“When a sheet changes” watches the Issue description column. It only fires on real new tickets, not on the flow’s own write-back." },
+                { num: "3", title: "Configured Gemini extraction", body: "Passed Issue description and Reported by to Gemini. Asked for priority based on business impact, category from a fixed list, and a one-line summary." },
+                { num: "4", title: "Updated the triggering row", body: "Matched the row by Timestamp, then wrote Gemini Priority into the Priority column and Gemini Category into the Category column." },
+                { num: "5", title: "Added the high-priority handoff", body: "A “Check if” branch tests whether Priority equals High. Only then does the flow send a private Google Chat notification." },
+                { num: "6", title: "Activated and tested live", body: "Turned the flow on. Added two live test rows to the sheet. Both completed successfully, producing High/Billing and Low/Account Access classifications." }
+              ]
+            },
+            {
+              type: "table",
+              title: "Source ticket data",
+              note: "Three sample tickets from the CSV. Priority and Category were blank in the source and are filled by the workflow.",
+              headers: ["Timestamp", "Issue description", "Reported by", "Priority", "Category"],
+              rows: [
+                ["9/20/2026 9:00", "All our enterprise users are getting a 500 error on checkout and cannot complete payments.", "Sarah Jenkins", "high", "technical"],
+                ["9/20/2026 9:05", "Can someone please reset my password? I forgot it and need to log in today.", "Alex Mercer", "low", "account"],
+                ["9/20/2026 9:10", "URGENT! FIX MY ACCOUNT RIGHT NOW THIS IS RIDICULOUS AND UNACCEPTABLE!", "David Ross", "low", "account"]
+              ]
+            },
+            {
+              type: "table2",
+              title: "Live test results",
+              note: "After activation, two new tickets were added directly to the sheet to confirm the end-to-end flow works in production.",
+              headers: ["Test ticket", "Classification", "Chat alert?"],
+              rows: [
+                ["Checkout failing for all customers and no payments can be completed", "high:billing", "yes"],
+                ["Customer needs help updating the spelling of their profile name", "low:account", "no"]
+              ]
+            },
+            {
+              type: "links",
+              title: "Live resources",
+              items: [
+                { label: "Google Sheet", desc: "Private to Rajesh Kumar. Contains source tickets and classified test results.", url: "https://docs.google.com/spreadsheets/d/1t5chhAh9STqqYvnBMlGFbDQAZ-GVC0vwWJYCnm0oJtA/edit?gid=0" },
+                { label: "Workspace Studio flow", desc: "Active flow named “GOC Lab B – Ticket Prioritiser.” View the six steps and run history.", url: "https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" }
+              ]
+            }
+          ],
+          highlights: [
+            { heading: "Core automation pattern", bullets: ["Trigger → Decision → Action → Handoff", "Workspace Studio watches a Google Sheet for new ticket rows", "Gemini classifies Priority and Category from the issue description", "Only High-priority tickets generate a Google Chat alert"] },
+            { heading: "What makes the design robust", bullets: ["Matches the row by Timestamp to avoid overwriting wrong records", "Watches only the input column, not its own write-back", "Tests both calm serious issues and loud minor issues", "Uses business impact, not emotional wording, to set priority"] },
+            { heading: "Live test outcome", bullets: ["High / Billing ticket → Chat alert sent", "Low / Account Access ticket → Silent, no alert", "Both executions recorded as Complete in Workspace Studio"] }
+          ],
+          faqs: [
+            { q: "Why use a Google Sheet as both trigger and destination?", a: "It keeps the prototype simple and shows a real pattern: a form or intake mechanism writes a row, the flow reads it, and writes the result back to the same row so humans can see it." },
+            { q: "How does the flow avoid triggering itself when it writes Priority and Category?", a: "The trigger is configured to watch only the Issue description column, not the Priority or Category columns. When the flow writes to those columns, the trigger ignores the change." },
+            { q: "What would happen if a ticket says URGENT but is actually minor?", a: "Gemini is instructed to judge business impact, not tone. In the test data, a ticket written in all-caps complaining about an account issue was correctly classified as Low priority." },
+            { q: "Could this flow send alerts somewhere other than Google Chat?", a: "Yes. Workspace Studio supports email, tasks, docs, and other connectors. The same decision branch could route High-priority tickets to different channels." }
+          ]
+        },
+        {
+          id: 2,
+          shortTitle: "Building Business Automations",
+          headline: "Building Business Automations",
+          subline: "( With Google Workspace Studio and AI. )",
+          eyebrow: "New Lesson",
+          completed: false,
+          screenshots: [],
+          learn: [
+            {
+              type: "objectives",
+              title: "Learning objectives",
+              items: [
+                "How a Workspace Studio flow moves from trigger to AI reasoning, action, and human notification",
+                "How Gemini extracts structured information from documents, spreadsheets, surveys, and support tickets",
+                "How Workspace Studio differs from n8n, Zapier, Power Automate, and Google Opal",
+                "Why workflow design must begin with a clearly defined business problem",
+                "How privacy, permissions, and data boundaries affect business automation",
+                "How browser-controlling AI assistants can help construct and test workflows",
+                "How these ideas apply to support triage, end-of-day digests, content processing, session publishing, and event promotion"
+              ]
+            },
+            {
+              type: "text",
+              title: "Opening demonstration: extracting learning material from a video",
+              body: "The first team explained an automation for processing educational videos: monitor a channel, detect a new upload, obtain its transcript, identify key points, extract prompts and repository references, and email the organised result. Because they lacked Google Spark and had limited time, they demonstrated the idea with one video. They first supplied the video information to Gemini, which created a Google document. They then moved to Workspace Studio and configured a flow: detect when a file is edited in Google Drive, use Gemini with a prompt and a variable from the starter, ask Gemini to return the information as a list, and send the output by email. The test confirmed the email arrived. The team clarified that the production workflow would detect the video, obtain the transcript, send it to Gemini, extract ideas, and email the result without manual intervention. Another participant connected this to NotebookLM: every new video could be added to a knowledge source so users could ask questions across all uploads."
+            },
+            {
+              type: "text",
+              title: "Ticket Prioritiser demonstration",
+              body: "The business problem was straightforward: support requests arrive with different urgency levels, but a human should not have to read every ticket before the organisation knows which ones require immediate attention. The planned flow used a Google Sheet containing ticket data. The stages were: trigger when the sheet changes or a new row is added; extract category, priority, and short summary with Gemini; update the correct ticket row; check whether priority is High; and hand off to Google Chat only if true. During the demonstration, the team discussed how to identify the row to update. They initially used the issue description and considered the timestamp, recognising that this configuration may have been unnecessarily complicated and could have contributed to a failed write-back. They also identified another possible mistake: the Extract step must allow Gemini to analyse the issue description and produce new values, rather than selecting existing Priority and Category values from the sheet. The Summary field was also missing. The final decision logic was conceptually correct: use the extracted or updated Priority value, test whether it equals High, and notify the team in Chat only when that condition is true. The trainer reframed this in business language: a customer submits a ticket through a Google Form or another intake mechanism, the response enters Google Sheets, Gemini reads the description, determines category and priority, and immediately alerts the support team when the ticket is urgent."
+            },
+            {
+              type: "text",
+              title: "Can Gemini build the workflow from a document?",
+              body: "A participant asked whether the entire workflow specification could simply be copied into the initial AI box in Workspace Studio so the system would create everything automatically. The trainer explained that the AI box accepts a written description of the workflow, but may not reliably read a linked document merely because the URL is pasted into the prompt. A better approach is to give the source document to Gemini, ask Gemini to convert the document into a clear Workspace Studio workflow prompt, paste that generated prompt into the Workspace Studio AI box, and then review and correct the generated flow. The trainer emphasised that using Gemini, Claude, or another assistant to formulate the prompt is not inappropriate. The objective is to solve the problem. The learner still needs to understand the required outcome and review the generated flow."
+            },
+            {
+              type: "text",
+              title: "End-of-day support digest",
+              body: "Another group demonstrated an end-of-day summarisation flow. Their implementation used a schedule as the starter and a Google Drive document containing survey or support information. Gemini reviewed the selected document and summarised its questions or cases in bullet form without adding opinions. The resulting summary was then delivered through Google Chat. The trainer explained the business use case. A support team may receive many enquiries throughout the day. At the end of the day, managers need to know how many tickets arrived, how many remain open, which open tickets are High priority, and what must be addressed first the following morning. A scheduled digest reduces manual reporting and gives the team a consistent operational handoff. On a difficult day, an additional condition could alert a manager when the open backlog exceeds a defined threshold. The participant noted that their work involved many emails and chats, and that learning this pattern could significantly reduce repetitive administrative effort."
+            },
+            {
+              type: "text",
+              title: "Document and incident summarisation",
+              body: "A third group created a simple incident document, placed it in a Google Drive folder, and configured an automation around that folder. The workflow read the document and extracted what had gone wrong, what action was required, the sentiment of the document, whether the matter was urgent, and whether the document contained a question requiring an answer. The team ran a test. Gemini returned neutral sentiment, no urgent issue, and no question requiring an answer. The trainer explained the broader use case. Businesses frequently receive client attachments. Instead of requiring an employee to open every document, a workflow can read the attachment, summarise it, identify anything important, classify the required action, and post the result to Google Chat, a team space, or a personal task list. This creates an operational triage system in which a person opens only the documents that genuinely require attention."
+            },
+            {
+              type: "text",
+              title: "Security, privacy, and data boundaries",
+              body: "A participant asked whether granting a workflow access to Google Drive or Gmail would expose personal or confidential information to an LLM. The trainer explained that the demonstrated workflow operates inside the Google ecosystem rather than sending the information to an unrelated external AI provider. The organisation still controls which folder, file, mailbox condition, or user context is included in the automation. The important design principle is scope. A workflow should receive only the data required for its task. If a folder or email stream contains sensitive material that should not be processed, it should not be included in the automation. Another participant clarified the difference between personal and business environments. The intended context is an organisation's Workspace account, where authorised users already operate within the same business ecosystem. The automation is not meant to make the information public. The class agreed on a practical interpretation: use the organisation's approved Workspace environment; restrict the workflow to the minimum necessary files, folders, users, and messages; do not automate sensitive sources merely because the connector makes them available; understand that using an external model or platform introduces a different data-sharing boundary; and remember that organisational permissions and governance still matter even when the automation remains inside one ecosystem. The trainer's explanation was a high-level workshop answer rather than a complete legal or enterprise-security assessment. A production implementation should still review the organisation's Workspace edition, administrator settings, data-processing terms, retention rules, audit requirements, and internal security policies."
+            },
+            {
+              type: "text",
+              title: "Workspace Studio compared with larger automation platforms",
+              body: "A participant said Workspace Studio felt unintuitive, sluggish, and comparatively rigid. They contrasted it with n8n and Microsoft Power Automate, where many more actions and configuration options are visible. The trainer agreed that Workspace Studio was newer and less flexible than established automation platforms such as Zapier, n8n, and Microsoft Power Automate. Google had introduced it only recently and was continuing to add capabilities. The trainer's recommendation was contextual rather than absolute. Workspace Studio is useful when the work primarily stays inside Gmail, Drive, Sheets, Docs, Chat, Calendar, and other Google services. n8n, Zapier, Power Automate, or similar platforms may be more appropriate when the workflow requires broader integrations, detailed branching, richer controls, or connections outside Google Workspace. Google Opal can also support workflows and applications that need to connect beyond the immediate Workspace environment. The group discussed the strategic importance of Google's infrastructure and its broader AI ecosystem. The conclusion was not that Workspace Studio was already the strongest general-purpose automation platform, but that it could become increasingly capable and was already valuable for focused Workspace use cases."
+            },
+            {
+              type: "text",
+              title: "Organisational platforms and Chinese walls",
+              body: "Participants noted that large organisations usually standardise on either a Google or Microsoft ecosystem. Governance boundaries can prevent employees from introducing external tools into the corporate environment. In those situations, the practical automation choice is often the platform already approved by the organisation: Google Workspace Studio and related Google tools in a Google environment, or Power Automate and related Microsoft tools in a Microsoft environment. For smaller businesses with fewer platform restrictions, Workspace automation can be especially valuable because it can reduce repetitive work without requiring a large software implementation."
+            },
+            {
+              type: "text",
+              title: "Automating the publication of recorded sessions",
+              body: "One participant described a recurring operational problem in the AIC Mastermind community. After every recorded session, someone must manually wait for Google to finish rendering the recording and transcript, create or locate the correct folder, move the files, and publish them for members. Long recordings may take 10 to 15 hours to render and may finish during the night. This creates delays and member complaints when the content is not available quickly. The proposed automation would detect when the rendered recording appears in Google Drive, identify the appropriate session name and destination, create or select the correct folder, move or copy the recording and transcript, and publish or announce the material automatically. The participant explained that an external automation platform could perform similar work, but the data might leave the Google environment. A Workspace-native flow keeps more of the process within the organisation's existing ecosystem."
+            },
+            {
+              type: "text",
+              title: "Using Claude or ChatGPT to build Workspace flows",
+              body: "The trainer explained that he and Ankur first defined the workshop use cases and discussed what each flow needed to accomplish. They then used Claude to help design and build the flows. Claude's desktop/browser-control capability was given access to the relevant browser session. It generated the prompts, constructed several workflows one after another, created supporting test documents, ran tests, and corrected parts of the setup. The key lesson was not that Claude is mandatory. Gemini can also generate a workflow from a sufficiently precise description. Claude was used because several flows and test assets had to be created efficiently in sequence. The trainer summarised the limitation clearly: the AI assistant still needs a well-defined problem. If the person does not know what outcome they want, the generated workflow is unlikely to be reliable."
+            },
+            {
+              type: "text",
+              title: "Automating AIC Mastermind event promotion",
+              body: "A participant proposed automating the weekly promotional process for AIC Mastermind sessions. The recurring inputs are usually predictable: the speaker's LinkedIn profile or photograph, the session topic, the next Friday's date, a fixed Google Meet link, and a short AI-generated explanation of the topic. The desired output would include a promotional video featuring the speaker and a complete WhatsApp announcement containing the topic, date, time, meeting link, and expanded description. The suggested system combined multiple components: a Workspace flow receives the speaker details, image, and topic; a Gem or another Google AI capability produces the expanded copy and potentially the video; the generated assets are saved in Google Drive; a WhatsApp automation retrieves the final media and message; and the message is distributed to the required audience. The class connected this idea to an earlier WhatsApp automation session. They also suggested creating timed reminders, such as 12-hour and two-hour notifications, and storing session notes in NotebookLM so that older lessons could be searched and reused. The trainer clarified that an AI assistant may not directly perform every external action. For example, Claude may not directly send a WhatsApp message, but it can operate or configure an authorised automation platform such as n8n that performs the action."
+            },
+            {
+              type: "text",
+              title: "Business implications and practical operating model",
+              body: "Across all demonstrations, the class repeatedly returned to the same architecture: Trigger → Data and context → AI reasoning → Action → Decision → Handoff → Verification. The strongest business opportunities discussed were repetitive processes with clear inputs and outputs: support-ticket classification and escalation; end-of-day operational reporting; document and attachment triage; video transcript processing; knowledge-base updates; recording and transcript publication; event promotion and reminder distribution; and email labelling and draft creation. The trainer encouraged participants to focus on simple workflows that save time in real businesses rather than building automation merely because the technology is interesting."
+            },
+            {
+              type: "text",
+              title: "Closing discussion",
+              body: "Participants thanked Ritesh, Ankur, and the organisers. Several said the session had generated many practical ideas for tasks they were still doing manually. The group also briefly greeted a participant who joined while travelling on a flight. The conversation then returned to final questions. A participant asked whether equivalent solutions were available for Microsoft Outlook and Microsoft-based offices. The source recording ends immediately after the trainer begins responding: "Of course. I mean, I shared the..." The remainder of that answer is not present in the supplied source and has not been reconstructed or invented."
+            }
+          ],
+          highlights: [
+            { heading: "Core automation architecture", bullets: ["Trigger → Data/context → AI reasoning → Action → Decision → Handoff → Verification", "This pattern appeared across every demonstration in the class"] },
+            { heading: "Video-to-notes automation", bullets: ["Detect a new upload or channel video", "Obtain transcript and send to Gemini", "Extract prompts, references, and key points", "Email the organised result or add to NotebookLM knowledge source"] },
+            { heading: "Ticket prioritisation pattern", bullets: ["Trigger: new spreadsheet row", "Extract: Priority, Category, Summary with Gemini", "Action: write values back to the correct row", "Decision: only High priority triggers Chat alert"] },
+            { heading: "End-of-day digest", bullets: ["Scheduled daily report from a document or sheet", "Summarise cases without adding opinion", "Report tickets arrived, open count, high-priority backlog", "Alert manager if backlog exceeds threshold"] },
+            { heading: "Document triage", bullets: ["Read client attachments automatically", "Extract what went wrong, required action, sentiment, urgency", "Post summary to Chat or task list", "Only open documents that genuinely need attention"] },
+            { heading: "Security and privacy", bullets: ["Keep workflows inside the approved Workspace environment", "Restrict to minimum necessary files, folders, users, messages", "External models or platforms create different data-sharing boundaries", "Organisational permissions and governance still matter"] },
+            { heading: "Platform comparison", bullets: ["Workspace Studio: best for Gmail, Drive, Sheets, Docs, Chat, Calendar", "n8n, Zapier, Power Automate: better for broader integrations", "Google Opal: supports workflows that connect beyond Workspace", "Choice often determined by organisation’s approved ecosystem"] },
+            { heading: "Using AI assistants to build flows", bullets: ["Define the outcome before asking AI to build", "Use Gemini, Claude, or ChatGPT to formulate the prompt", "Paste the generated prompt into Workspace Studio AI box", "Review, test, and correct the generated workflow"] },
+            { heading: "Event promotion automation", bullets: ["Inputs: speaker photo, topic, date, Meet link", "Outputs: promotional video and WhatsApp announcement", "Add timed reminders (12-hour, 2-hour)", "Store notes in NotebookLM for search and reuse"] },
+            { heading: "Practical takeaways", bullets: ["Start with a recurring business problem, not a tool", "Define trigger, context, decision, action, and handoff before building", "Give the AI only the data it needs", "Use stable identifiers when updating spreadsheets", "Test normal and difficult examples", "Treat AI-generated workflows as drafts that need review"] }
+          ],
+          faqs: [
+            { q: "Can I paste a long document into Workspace Studio and have it build the flow?", a: "Not reliably. The better method is to give the document to Gemini or Claude first, ask it to write a clear Workspace Studio workflow prompt, paste that prompt into Workspace Studio, and then review the generated flow." },
+            { q: "Is Workspace Studio better than n8n or Power Automate?", a: "It depends. Workspace Studio is strongest when the work stays inside Gmail, Drive, Sheets, Docs, Chat, and Calendar. For broader integrations, richer branching, or external tools, n8n, Zapier, Power Automate, or Google Opal may be better." },
+            { q: "Will giving a workflow access to Drive expose confidential data?", a: "The workflow stays inside the Google ecosystem and uses existing permissions. The key is scope: include only the files, folders, and messages the workflow genuinely needs. A production deployment should also review admin settings and data-processing terms." },
+            { q: "Can I use Claude or ChatGPT to actually run the WhatsApp automation?", a: "AI assistants like Claude usually cannot directly send WhatsApp messages. They can help design and configure an authorised automation platform such as n8n that performs the WhatsApp action." },
+            { q: "What is the simplest pattern for any business automation?", a: "Trigger → Data/context → AI reasoning → Action → Decision → Handoff → Verification. Map your real process to these seven stages before opening any tool." },
+            { q: "Which repetitive task should I automate first?", a: "Choose a task with clear inputs and outputs that you perform repeatedly, such as support triage, end-of-day reports, document summaries, or event promotion. Avoid automating something just because the technology is interesting." },
+            { q: "How do I stop the flow from triggering itself when it writes data back?", a: "Watch only the input column that should start the flow. If the flow writes to other columns, the trigger should ignore those columns." },
+            { q: "Which task in your organisation has a clear trigger, input, decision, action, and handoff?", a: "This is a reflection question. Look for work that arrives in a predictable format, requires a repeated judgment, produces a repeated action, and needs a repeated notification to a person or team." }
+          ]
+        }
+      ]
+    };
+
+    let currentLesson = 0;
+    let currentTab = 'learn';
+
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('ritz7-progress');
+        if (saved) {
+          const progress = JSON.parse(saved);
+          course.lessons.forEach((lesson, i) => {
+            if (progress[i]) lesson.completed = true;
+          });
+        }
+      } catch (e) {}
+    }
+
+    function saveProgress() {
+      try {
+        const progress = course.lessons.map(l => l.completed ? 1 : 0);
+        localStorage.setItem('ritz7-progress', JSON.stringify(progress));
+      } catch (e) {}
+    }
+
+    function updateProgress() {
+      const completed = course.lessons.filter(l => l.completed).length;
+      const pct = Math.round((completed / course.lessons.length) * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = pct + '%';
+    }
+
+    function renderSidebar() {
+      const list = document.getElementById('lesson-list');
+      list.innerHTML = course.lessons.map((lesson, idx) => `
+        <div class="lesson-item ${idx === currentLesson ? 'active' : ''}" onclick="goToLesson(${idx})">
+          <div class="lesson-item-top">
+            <div class="lesson-num">${lesson.id}</div>
+            <div class="lesson-status" style="${lesson.completed ? '' : 'visibility:hidden'}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           </div>
-          <div class="row">
-            <span class="label">Status</span>
-            <span class="value">Chat alert sent</span>
-          </div>
-          <div class="row">
-            <span class="label">Auto-classified by</span>
-            <span class="value">Gemini</span>
-          </div>
-          <div class="row">
-            <span class="label">Written to sheet</span>
-            <span class="value">Priority + Category</span>
-          </div>
+          <div class="lesson-title">${lesson.shortTitle}</div>
         </div>
-      </div>
-    </div>
-  </header>
+      `).join('');
+    }
 
-  <section id="problem">
-    <div class="container">
-      <div class="section-head">
-        <h2>Workflow opportunity</h2>
-        <p>Every support ticket arrives with the same urgency. Someone has to read each one, judge its real impact, and route it. That repetitive decision is exactly what automation should own.</p>
-      </div>
-      <div class="two-col">
-        <div class="info-card">
-          <h3>🚫 The problem</h3>
-          <ul>
-            <li>Tickets pile up faster than they can be triaged.</li>
-            <li>Loud language gets mistaken for real urgency.</li>
-            <li>People waste hours sorting instead of solving.</li>
-            <li>True blockers can hide beneath noisy, low-impact requests.</li>
-          </ul>
-        </div>
-        <div class="info-card">
-          <h3>✅ The solution</h3>
-          <ul>
-            <li>Workspace Studio watches the Google Sheet for new ticket rows.</li>
-            <li>Gemini judges impact, not tone.</li>
-            <li>Priority and Category write back to the same row.</li>
-            <li>Only High-priority tickets interrupt a person via Chat.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
+    function renderHero() {
+      const lesson = course.lessons[currentLesson];
+      document.getElementById('lesson-headline').textContent = lesson.headline;
+      const subline = document.querySelector('.subline');
+      subline.innerHTML = `<span class="bracket">(</span> ${lesson.subline.replace(/[()]/g, '')} <span class="bracket">)</span>`;
+      document.querySelector('.eyebrow').innerHTML = `<span class="pulse"></span> ${lesson.eyebrow}`;
+    }
 
-  <section class="alt" id="framework">
-    <div class="container">
-      <div class="section-head">
-        <h2>The Four-Filter Framework</h2>
-        <p>Ritesh Hegde teaches every automation as four parts: what starts it, what decides it, what changes because of it, and who needs to know.</p>
-      </div>
-      <div class="framework-grid">
-        <div class="framework-card blue">
-          <div class="framework-icon">1</div>
-          <h4>Trigger</h4>
-          <p>A new ticket row appears in the private Google Sheet.</p>
-          <ul>
-            <li>Watches the <strong>Issue description</strong> column.</li>
-            <li>Ignores its own Priority/Category write-back.</li>
-            <li>Fires within seconds.</li>
-          </ul>
-        </div>
-        <div class="framework-card red">
-          <div class="framework-icon">2</div>
-          <h4>Decision</h4>
-          <p>Gemini extracts three fields from the ticket text.</p>
-          <ul>
-            <li><strong>Priority:</strong> High / Medium / Low</li>
-            <li><strong>Category:</strong> Billing, Technical, Policy, Account Access, Other</li>
-            <li><strong>Summary:</strong> ≤15 words</li>
-          </ul>
-        </div>
-        <div class="framework-card yellow">
-          <div class="framework-icon">3</div>
-          <h4>Action</h4>
-          <p>The flow updates the original row with Gemini’s output.</p>
-          <ul>
-            <li>Matches row by Timestamp.</li>
-            <li>Writes Priority to the Priority column.</li>
-            <li>Writes Category to the Category column.</li>
-          </ul>
-        </div>
-        <div class="framework-card green">
-          <div class="framework-icon">4</div>
-          <h4>Handoff</h4>
-          <p>Only High-priority tickets interrupt a person.</p>
-          <ul>
-            <li>Check if Priority = High.</li>
-            <li>If true, send private Google Chat alert.</li>
-            <li>Medium and Low stay silent.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
+    function renderTabButtons() {
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === currentTab);
+      });
+    }
 
-  <section id="build">
-    <div class="container">
-      <div class="section-head">
-        <h2>How it was built in six steps</h2>
-        <p>Built and verified in Google Workspace Studio using a private Google Sheet as both the source and the destination.</p>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div>
-            <h4>Created the private Google Sheet</h4>
-            <p>Columns: Timestamp, Issue description, Reported by, Priority, Category. Imported three sample support tickets from the CSV.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div>
-            <h4>Set the trigger</h4>
-            <p>“When a sheet changes” watches the Issue description column in Sheet1. It only fires on real new tickets, not on the flow’s own write-back.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div>
-            <h4>Configured Gemini extraction</h4>
-            <p>Passed Issue description and Reported by to Gemini. Asked for priority based on business impact, category from a fixed list, and a one-line summary.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">4</div>
-          <div>
-            <h4>Updated the triggering row</h4>
-            <p>Matched the row by Timestamp, then wrote Gemini Priority into the Priority column and Gemini Category into the Category column.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">5</div>
-          <div>
-            <h4>Added the high-priority handoff</h4>
-            <p>A “Check if” branch tests whether Priority equals High. Only then does the flow send a private Google Chat notification.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-num">6</div>
-          <div>
-            <h4>Activated and tested live</h4>
-            <p>Turned the flow on. Added two live test rows to the sheet. Both completed successfully, producing High/Billing and Low/Account Access classifications.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+    function renderContent() {
+      const lesson = course.lessons[currentLesson];
+      const container = document.getElementById('tab-content');
+      container.innerHTML = '';
 
-  <section class="alt" id="data">
-    <div class="container">
-      <div class="section-head">
-        <h2>Source ticket data</h2>
-        <p>Three sample tickets from the CSV. Priority and Category were blank in the source and are filled by the workflow.</p>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Issue description</th>
-              <th>Reported by</th>
-              <th>Priority</th>
-              <th>Category</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>9/20/2026 9:00</td>
-              <td class="issue">All our enterprise users are getting a 500 error on checkout and cannot complete payments.</td>
-              <td>Sarah Jenkins</td>
-              <td><span class="badge badge-high">High</span></td>
-              <td><span class="badge badge-technical">Technical</span></td>
-            </tr>
-            <tr>
-              <td>9/20/2026 9:05</td>
-              <td class="issue">Can someone please reset my password? I forgot it and need to log in today.</td>
-              <td>Alex Mercer</td>
-              <td><span class="badge badge-low">Low</span></td>
-              <td><span class="badge badge-account">Account Access</span></td>
-            </tr>
-            <tr>
-              <td>9/20/2026 9:10</td>
-              <td class="issue">URGENT! FIX MY ACCOUNT RIGHT NOW THIS IS RIDICULOUS AND UNACCEPTABLE!</td>
-              <td>David Ross</td>
-              <td><span class="badge badge-low">Low</span></td>
-              <td><span class="badge badge-account">Account Access</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="margin-top:16px;font-size:14px;color:var(--text-muted);">Note: The third ticket sounds dramatic, but Gemini judged it by impact — not tone — and correctly classified it as Low priority.</p>
-    </div>
-  </section>
-
-  <section id="results">
-    <div class="container">
-      <div class="section-head">
-        <h2>Live test results</h2>
-        <p>After activation, two new tickets were added directly to the sheet to confirm the end-to-end flow works in production.</p>
-      </div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Test ticket</th>
-              <th>Classification</th>
-              <th>Chat alert?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="issue">Checkout failing for all customers and no payments can be completed</td>
-              <td><span class="badge badge-high">High</span> <span class="badge badge-billing">Billing</span></td>
-              <td><span style="color:var(--green);font-weight:700;">Yes ✓</span></td>
-            </tr>
-            <tr>
-              <td class="issue">Customer needs help updating the spelling of their profile name</td>
-              <td><span class="badge badge-low">Low</span> <span class="badge badge-account">Account Access</span></td>
-              <td><span style="color:var(--text-muted);">No — silent</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <p style="margin-top:16px;font-size:14px;color:var(--text-muted);">Workspace Studio recorded both executions as Complete on September 20, 2026 at 10:55 AM and 10:56 AM.</p>
-    </div>
-  </section>
-
-  <section class="alt" id="verify">
-    <div class="container">
-      <div class="section-head">
-        <h2>Verification evidence</h2>
-        <p>Screenshots from the live Workspace Studio flow and the classified Google Sheet.</p>
-      </div>
-      <div class="verification-grid">
-        <div class="verification-card">
-          <img src="assets/verify-6.png" alt="Workspace Studio flows list showing Ticket Prioritiser" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
-          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Workspace Studio flows</div>
-          <div class="v-body">
-            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <h4>Active workflow overview</h4>
-            <p>Ticket Prioritiser flow listed in Workspace Studio, ready to run.</p>
+      if (currentTab === 'learn') {
+        container.innerHTML = lesson.learn.map(block => renderLearnBlock(block)).join('');
+        if (lesson.screenshots.length > 0) {
+          container.innerHTML += `
+            <div class="content-block">
+              <h3>Screenshots</h3>
+              ${lesson.screenshots.map(s => `
+                <div class="screenshot">
+                  <img src="${s.file}" alt="${s.caption}" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML += '<div style=\'padding:40px;text-align:center;color:var(--text-muted);font-size:13px;\'>${s.caption} (image not found)</div>';">
+                  <div class="screenshot-caption">${s.caption}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+      } else if (currentTab === 'highlights') {
+        container.innerHTML = `
+          <div class="content-block">
+            <h3>Key Highlights from Lesson ${lesson.id}</h3>
           </div>
-        </div>
-        <div class="verification-card">
-          <img src="assets/verify-1.png" alt="Workspace Studio activity history" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
-          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Workflow activity history</div>
-          <div class="v-body">
-            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <h4>Activity history</h4>
-            <p>Live executions captured during final verification.</p>
+          ${lesson.highlights.map(group => `
+            <div class="content-block">
+              <h3>${group.heading}</h3>
+              <ul>${group.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+            </div>
+          `).join('')}
+        `;
+      } else if (currentTab === 'faqs') {
+        container.innerHTML = `
+          <div class="content-block">
+            <h3>Frequently Asked Questions</h3>
           </div>
-        </div>
-        <div class="verification-card">
-          <img src="assets/verify-7.png" alt="Classified Google Sheet results" onerror="this.style.display='none'; this.parentElement.querySelector('.fallback').style.display='grid';">
-          <div class="fallback" style="display:none;height:180px;place-items:center;background:var(--surface-2);color:var(--text-muted);font-size:13px;">Screenshot: Classified Google Sheet</div>
-          <div class="v-body">
-            <div class="check"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <h4>Classified sheet</h4>
-            <p>Final Google Sheet shows imported tickets plus test classifications.</p>
+          ${lesson.faqs.map((faq, idx) => `
+            <div class="faq-item">
+              <button class="faq-q" onclick="toggleFaq(this.parentElement)">
+                ${faq.q}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="faq-a">
+                <div class="faq-a-inner">${faq.a}</div>
+              </div>
+            </div>
+          `).join('')}
+        `;
+      }
+    }
+
+    function renderLearnBlock(block) {
+      if (block.type === 'objectives') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            <div class="objective-list">
+              ${block.items.map(item => `
+                <div class="objective-item">
+                  <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span>${item}</span>
+                </div>
+              `).join('')}
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
+        `;
+      }
+      if (block.type === 'text') {
+        const paragraphs = block.body.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+        return `<div class="content-block"><h3>${block.title}</h3>${paragraphs}</div>`;
+      }
+      if (block.type === 'twoCol') {
+        return `
+          <div class="two-col">
+            <div class="info-card">
+              <h3>${block.left.title}</h3>
+              <ul>${block.left.items.map(i => `<li>${i}</li>`).join('')}</ul>
+            </div>
+            <div class="info-card">
+              <h3>${block.right.title}</h3>
+              <ul>${block.right.items.map(i => `<li>${i}</li>`).join('')}</ul>
+            </div>
+          </div>
+        `;
+      }
+      if (block.type === 'framework') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            <div class="framework-grid">
+              ${block.cards.map(card => `
+                <div class="framework-card ${card.color}">
+                  <div class="framework-icon">${card.num}</div>
+                  <h4>${card.title}</h4>
+                  <p>${card.body}</p>
+                  <ul>${card.items.map(i => `<li>${i}</li>`).join('')}</ul>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      if (block.type === 'steps') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            ${block.items.map(step => `
+              <div class="step">
+                <div class="step-num">${step.num}</div>
+                <div>
+                  <h4>${step.title}</h4>
+                  <p>${step.body}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+      if (block.type === 'table') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>${block.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${block.rows.map(row => `
+                    <tr>
+                      ${row.map((cell, i) => {
+                        if (i === 1) return `<td class="issue">${cell}</td>`;
+                        if (i === 3 && cell === 'high') return `<td><span class="badge badge-high">High</span></td>`;
+                        if (i === 3 && cell === 'low') return `<td><span class="badge badge-low">Low</span></td>`;
+                        if (i === 4 && cell === 'technical') return `<td><span class="badge badge-technical">Technical</span></td>`;
+                        if (i === 4 && cell === 'account') return `<td><span class="badge badge-account">Account Access</span></td>`;
+                        return `<td>${cell}</td>`;
+                      }).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:12px;font-size:13px;color:var(--text-muted);">${block.note}</p>
+          </div>
+        `;
+      }
+      if (block.type === 'table2') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>${block.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                <tbody>
+                  ${block.rows.map(row => `
+                    <tr>
+                      ${row.map((cell, i) => {
+                        if (i === 0) return `<td class="issue">${cell}</td>`;
+                        if (i === 1 && cell === 'high:billing') return `<td><span class="badge badge-high">High</span> <span class="badge badge-billing">Billing</span></td>`;
+                        if (i === 1 && cell === 'low:account') return `<td><span class="badge badge-low">Low</span> <span class="badge badge-account">Account Access</span></td>`;
+                        if (i === 2 && cell === 'yes') return `<td><span style="color:var(--green);font-weight:700;">Yes ✓</span></td>`;
+                        if (i === 2 && cell === 'no') return `<td><span style="color:var(--text-muted);">No — silent</span></td>`;
+                        return `<td>${cell}</td>`;
+                      }).join('')}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:12px;font-size:13px;color:var(--text-muted);">${block.note}</p>
+          </div>
+        `;
+      }
+      if (block.type === 'links') {
+        return `
+          <div class="content-block">
+            <h3>${block.title}</h3>
+            <div class="two-col" style="gap:16px;">
+              ${block.items.map(link => `
+                <div class="info-card" style="padding:22px;">
+                  <h3 style="font-size:16px;margin-bottom:8px;">${link.label}</h3>
+                  <p style="font-size:13px;margin-bottom:14px;">${link.desc}</p>
+                  <a href="${link.url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);color:var(--accent);font-size:12px;font-weight:600;">Open →</a>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      return '';
+    }
 
-  <section id="summary">
-    <div class="container">
-      <div class="section-head">
-        <h2>Problem · Solution · Outcome · Metric</h2>
-        <p>The 3-minute share-back summary.</p>
-      </div>
-      <div class="summary-grid">
-        <div class="summary-card">
-          <h4>Problem</h4>
-          <p>Manual ticket triage is slow, inconsistent, and lets emotional tone drive urgency.</p>
-        </div>
-        <div class="summary-card">
-          <h4>Solution</h4>
-          <p>A Workspace Studio flow uses Gemini to classify tickets by impact and route only High-priority items to Chat.</p>
-        </div>
-        <div class="summary-card">
-          <h4>Outcome</h4>
-          <p>Routine tickets sort themselves. People only get interrupted when something is truly urgent.</p>
-        </div>
-        <div class="summary-card">
-          <h4>Metric</h4>
-          <p>Two live test tickets classified end-to-end in under one minute with zero manual sorting.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    function switchTab(tab) {
+      currentTab = tab;
+      renderTabButtons();
+      renderContent();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-  <section class="alt" id="links">
-    <div class="container">
-      <div class="section-head">
-        <h2>Live resources</h2>
-        <p>Access the private Google Sheet and the active Workspace Studio flow directly.</p>
-      </div>
-      <div class="links-grid">
-        <div class="link-card">
-          <h3>Google Sheet</h3>
-          <p>Private to Rajesh Kumar. Contains source tickets and classified test results.</p>
-          <a href="https://docs.google.com/spreadsheets/d/1t5chhAh9STqqYvnBMlGFbDQAZ-GVC0vwWJYCnm0oJtA/edit?gid=0" target="_blank">Open Sheet →</a>
-        </div>
-        <div class="link-card">
-          <h3>Workspace Studio flow</h3>
-          <p>Active flow named “Ticket Prioritiser.” View the six steps and run history.</p>
-          <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank">Open flow →</a>
-        </div>
-      </div>
-    </div>
-  </section>
+    function goToLesson(idx) {
+      currentLesson = idx;
+      currentTab = 'learn';
+      renderAll();
+      toggleSidebar(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-  <footer>
-    <div class="container">
-      Built by <strong>Rajesh Kumar</strong> · <a href="https://www.brandops.site" target="_blank">BrandOps Site</a>
-    </div>
-  </footer>
+    function prevLesson() {
+      if (currentLesson > 0) goToLesson(currentLesson - 1);
+    }
+
+    function nextLesson() {
+      if (currentLesson < course.lessons.length - 1) goToLesson(currentLesson + 1);
+    }
+
+    function markComplete() {
+      course.lessons[currentLesson].completed = true;
+      saveProgress();
+      updateProgress();
+      renderSidebar();
+      alert('Lesson ' + (currentLesson + 1) + ' marked complete.');
+    }
+
+    function toggleFaq(item) {
+      item.classList.toggle('open');
+    }
+
+    function toggleSidebar(force) {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.overlay');
+      const shouldOpen = typeof force === 'boolean' ? force : !sidebar.classList.contains('open');
+      sidebar.classList.toggle('open', shouldOpen);
+      overlay.classList.toggle('show', shouldOpen);
+    }
+
+    function renderAll() {
+      renderSidebar();
+      renderHero();
+      renderTabButtons();
+      renderContent();
+      updateProgress();
+    }
+
+    loadProgress();
+    renderAll();
+    window.addEventListener('resize', () => { if (window.innerWidth > 900) toggleSidebar(false); });
+  </script>
 
 </body>
 </html>

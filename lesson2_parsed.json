@@ -1,0 +1,256 @@
+{
+  "id": 2,
+  "title": "Building Business Automations with Google Workspace Studio and AI",
+  "objectives": [
+    "How a Google Workspace Studio flow moves from a trigger to AI reasoning, an action, and a human notification.",
+    "How Gemini can extract structured information from documents, spreadsheets, surveys, and support tickets.",
+    "How Workspace Studio differs from broader automation platforms such as n8n, Zapier, Microsoft Power Automate, and Google Opal.",
+    "Why workflow design must begin with a clearly defined business problem.",
+    "How privacy, permissions, and data boundaries affect business automation.",
+    "How browser-controlling AI assistants such as Claude or ChatGPT can help construct and test workflows.",
+    "How these ideas can automate recurring work such as support triage, end-of-day digests, content processing, session publishing, and event promotion."
+  ],
+  "transcriptSections": [
+    {
+      "heading": "Opening demonstration: extracting learning material from a video",
+      "content": "The first team explained an automation concept for processing educational videos. The intended system would monitor a channel, detect a newly uploaded video, obtain its transcript, identify the important points, extract prompts and repository references, and send the organised information by email.\n\nBecause the team did not have access to Google Spark and had limited time, they demonstrated the idea with one video instead of scraping an entire channel.\n\nThey first supplied the video information to Gemini. Gemini created a Google document containing the extracted material. The team then moved to Google Workspace Studio and configured the flow:\n\n1. The starter detected when a file was edited in Google Drive.\n2. The next step used Gemini with a prompt and a variable from the starter.\n3. Gemini was instructed to return the information as a list.\n4. The final step sent the Gemini output by email.\n\nThe team ran a test and confirmed that the email arrived.\n\nThe trainer acknowledged that the team understood the basic flow. However, the early steps were still manual. The team clarified that this was caused by the limited workshop time. The intended production workflow would automatically detect a new video, obtain its transcript, send it to Gemini, extract the important ideas, and email the result without manual intervention.\n\nAnother participant described a related NotebookLM concept. Every newly uploaded video would be added automatically to a NotebookLM knowledge source. Users could then ask questions across all uploaded videos. The limitation during the workshop was again the lack of Spark access."
+    },
+    {
+      "heading": "Ticket Prioritiser demonstration",
+      "content": "The next discussion focused on an automated support-ticket prioritisation workflow.\n\nThe business problem was straightforward: support requests arrive with different levels of urgency, but a human should not have to read every ticket before the organisation knows which ones require immediate attention.\n\nThe planned flow used a Google Sheet containing ticket data. The key stages were:\n\n1. **Trigger:** The flow starts when a sheet changes or a new ticket row is added.\n2. **Extract:** Gemini reads the issue description and returns a category, a priority, and a short summary.\n3. **Update rows:** The workflow writes the extracted priority and category into the correct ticket row.\n4. **Decision:** The workflow checks whether the priority is High.\n5. **Handoff:** If the decision is true, the workflow notifies a person in Google Chat.\n\nThe category identifies the appropriate department or issue type. Priority is classified as High, Medium, or Low. The summary must be one line and no longer than 15 words.\n\nDuring the demonstration, the team discussed how the workflow should identify the row to update. They initially used the issue description and also considered the timestamp. They recognised that this configuration might have been unnecessarily complicated and could have contributed to the failed write-back.\n\nThey also identified another possible mistake: the Extract step must allow Gemini to analyse the issue description and produce new values. The team may instead have selected existing Priority and Category values from the sheet. The Summary field was also missing.\n\nThe final decision logic was conceptually correct: use the extracted or updated Priority value, test whether it equals High, and notify the team in Chat only when that condition is true.\n\nThe trainer reframed the demonstration in business language. A customer submits a ticket through a Google Form or another intake mechanism. The response enters Google Sheets. Gemini reads the description, determines the category and priority, and immediately alerts the support team when the ticket is urgent. This is a practical example of AI solving a real operational problem.\n\nThe trainer also reassured the participants that the exercise was new and time-limited. Producing a partial workflow in 20 to 30 minutes was still valuable because the purpose was to learn how the components fit together."
+    },
+    {
+      "heading": "Can Gemini build the workflow from a document?",
+      "content": "A participant asked whether the entire workflow specification could simply be copied into the initial AI box in Workspace Studio so that the system would create everything automatically.\n\nThe trainer explained that the AI box accepts a written description of the workflow. It may not reliably read a linked document merely because the document URL is pasted into the prompt.\n\nA better approach is:\n\n1. Give the source document to Gemini.\n2. Ask Gemini to convert the document into a clear Workspace Studio workflow prompt.\n3. Paste that generated prompt into the Workspace Studio AI box.\n4. Review and correct the generated workflow.\n\nThe trainer emphasised that using Gemini, Claude, or another assistant to formulate the prompt is not inappropriate. The objective is to solve the problem. The learner still needs to understand the required outcome and review the generated flow."
+    },
+    {
+      "heading": "End-of-day support digest",
+      "content": "Another group demonstrated an end-of-day summarisation flow. Their implementation used a schedule as the starter and a Google Drive document containing survey or support information.\n\nGemini reviewed the selected document and summarised its questions or cases in bullet form without adding opinions. The resulting summary was then delivered through Google Chat.\n\nThe trainer explained the underlying business use case. A support team may receive many enquiries throughout the day. At the end of the day, managers need to know:\n\n- How many tickets arrived.\n- How many remain open.\n- Which open tickets are High priority.\n- What must be addressed first the following morning.\n\nA scheduled digest reduces manual reporting and gives the team a consistent operational handoff. On a difficult day, an additional condition could alert a manager when the open backlog exceeds a defined threshold.\n\nThe participant noted that their work involved many emails and chats, and that learning this pattern could significantly reduce repetitive administrative effort."
+    },
+    {
+      "heading": "Document and incident summarisation",
+      "content": "A third group created a simple incident document, placed it in a Google Drive folder, and configured an automation around that folder.\n\nThe workflow read the document and extracted information such as:\n\n- What had gone wrong.\n- What action was required.\n- The sentiment of the document.\n- Whether the matter was urgent.\n- Whether the document contained a question requiring an answer.\n\nThe team ran a test. Gemini returned neutral sentiment, no urgent issue, and no question requiring an answer.\n\nThe trainer explained the broader use case. Businesses frequently receive client attachments. Instead of requiring an employee to open every document, a workflow can read the attachment, summarise it, identify anything important, classify the required action, and post the result to Google Chat, a team space, or a personal task list.\n\nThis creates an operational triage system in which a person opens only the documents that genuinely require attention."
+    },
+    {
+      "heading": "Security, privacy, and data boundaries",
+      "content": "A participant asked whether granting a workflow access to Google Drive or Gmail would expose personal or confidential information to an LLM.\n\nThe trainer explained that the demonstrated workflow operates inside the Google ecosystem rather than sending the information to an unrelated external AI provider. The organisation still controls which folder, file, mailbox condition, or user context is included in the automation.\n\nThe important design principle is scope. A workflow should receive only the data required for its task. If a folder or email stream contains sensitive material that should not be processed, it should not be included in the automation.\n\nAnother participant clarified the difference between personal and business environments. The intended context is an organisation's Workspace account, where authorised users already operate within the same business ecosystem. The automation is not meant to make the information public.\n\nThe class agreed on the following practical interpretation:\n\n- Use the organisation's approved Workspace environment.\n- Restrict the workflow to the minimum necessary files, folders, users, and messages.\n- Do not automate sensitive sources merely because the connector makes them available.\n- Understand that using an external model or platform introduces a different data-sharing boundary.\n- Organisational permissions and governance still matter even when the automation remains inside one ecosystem.\n\nThe trainer's explanation was a high-level workshop answer rather than a complete legal or enterprise-security assessment. A production implementation should still review the organisation's Workspace edition, administrator settings, data-processing terms, retention rules, audit requirements, and internal security policies."
+    },
+    {
+      "heading": "Workspace Studio compared with larger automation platforms",
+      "content": "A participant said Workspace Studio felt unintuitive, sluggish, and comparatively rigid. They contrasted it with n8n and Microsoft Power Automate, where many more actions and configuration options are visible.\n\nThe trainer agreed that Workspace Studio was newer and less flexible than established automation platforms such as Zapier, n8n, and Microsoft Power Automate. Google had introduced it only recently and was continuing to add capabilities.\n\nThe trainer's recommendation was contextual rather than absolute:\n\n- Workspace Studio is useful when the work primarily stays inside Gmail, Drive, Sheets, Docs, Chat, Calendar, and other Google services.\n- n8n, Zapier, Power Automate, or similar platforms may be more appropriate when the workflow requires broader integrations, detailed branching, richer controls, or connections outside Google Workspace.\n- Google Opal can also support workflows and applications that need to connect beyond the immediate Workspace environment.\n\nThe group discussed the strategic importance of Google's infrastructure and its broader AI ecosystem. The conclusion was not that Workspace Studio was already the strongest general-purpose automation platform, but that it could become increasingly capable and was already valuable for focused Workspace use cases."
+    },
+    {
+      "heading": "Organisational platforms and \"Chinese walls\"",
+      "content": "Participants noted that large organisations usually standardise on either a Google or Microsoft ecosystem. Governance boundaries can prevent employees from introducing external tools into the corporate environment.\n\nIn those situations, the practical automation choice is often the platform already approved by the organisation:\n\n- Google Workspace Studio and related Google tools in a Google environment.\n- Power Automate and related Microsoft tools in a Microsoft environment.\n\nFor smaller businesses with fewer platform restrictions, Workspace automation can be especially valuable because it can reduce repetitive work without requiring a large software implementation."
+    },
+    {
+      "heading": "Automating the publication of recorded sessions",
+      "content": "One participant described a recurring operational problem in the AIC Mastermind community. After every recorded session, someone must manually wait for Google to finish rendering the recording and transcript, create or locate the correct folder, move the files, and publish them for members.\n\nLong recordings may take 10 to 15 hours to render and may finish during the night. This creates delays and member complaints when the content is not available quickly.\n\nThe proposed automation would:\n\n1. Detect when the rendered recording appears in Google Drive.\n2. Identify the appropriate session name and destination.\n3. Create or select the correct folder.\n4. Move or copy the recording and transcript.\n5. Publish or announce the material automatically.\n\nThe participant explained that an external automation platform could perform similar work, but the data might leave the Google environment. A Workspace-native flow keeps more of the process within the organisation's existing ecosystem."
+    },
+    {
+      "heading": "Using Claude or ChatGPT to build Workspace flows",
+      "content": "The trainer explained that he and Ankur first defined the workshop use cases and discussed what each flow needed to accomplish. They then used Claude to help design and build the flows.\n\nClaude's desktop/browser-control capability was given access to the relevant browser session. It generated the prompts, constructed several workflows one after another, created supporting test documents, ran tests, and corrected parts of the setup.\n\nThe key lesson was not that Claude is mandatory. Gemini can also generate a workflow from a sufficiently precise description. Claude was used because several flows and test assets had to be created efficiently in sequence.\n\nThe trainer summarised the limitation clearly: the AI assistant still needs a well-defined problem. If the person does not know what outcome they want, the generated workflow is unlikely to be reliable."
+    },
+    {
+      "heading": "Automating AIC Mastermind event promotion",
+      "content": "A participant proposed automating the weekly promotional process for AIC Mastermind sessions.\n\nThe recurring inputs are usually predictable:\n\n- The speaker's LinkedIn profile or photograph.\n- The session topic.\n- The next Friday's date.\n- A fixed Google Meet link.\n- A short AI-generated explanation of the topic.\n\nThe desired output would include a promotional video featuring the speaker and a complete WhatsApp announcement containing the topic, date, time, meeting link, and expanded description.\n\nThe suggested system combined multiple components:\n\n1. A Workspace flow receives the speaker details, image, and topic.\n2. A Gem or another Google AI capability produces the expanded copy and potentially the video.\n3. The generated assets are saved in Google Drive.\n4. A WhatsApp automation retrieves the final media and message.\n5. The message is distributed to the required audience.\n\nThe class connected this idea to an earlier WhatsApp automation session. They also suggested creating timed reminders, such as 12-hour and two-hour notifications, and storing session notes in NotebookLM so that older lessons could be searched and reused.\n\nThe trainer clarified that an AI assistant may not directly perform every external action. For example, Claude may not directly send a WhatsApp message, but it can operate or configure an authorised automation platform such as n8n that performs the action."
+    },
+    {
+      "heading": "Business implications and practical operating model",
+      "content": "Across all demonstrations, the class repeatedly returned to the same architecture:\n\n1. **Trigger:** A file, spreadsheet row, email, schedule, form response, or new recording starts the process.\n2. **Data and context:** The workflow receives only the information required for the task.\n3. **AI reasoning:** Gemini summarises, classifies, extracts, or drafts.\n4. **Action:** The workflow updates a sheet, creates a document, drafts a response, stores a file, or prepares content.\n5. **Decision:** Conditions determine whether the workflow continues or escalates.\n6. **Handoff:** A person receives a Chat message, email, task, digest, or WhatsApp communication.\n7. **Verification:** Tests confirm that the correct data and outputs moved through the intended path.\n\nThe strongest business opportunities discussed were repetitive processes with clear inputs and outputs:\n\n- Support-ticket classification and escalation.\n- End-of-day operational reporting.\n- Document and attachment triage.\n- Video transcript processing.\n- Knowledge-base updates.\n- Recording and transcript publication.\n- Event promotion and reminder distribution.\n- Email labelling and draft creation.\n\nThe trainer encouraged participants to focus on simple workflows that save time in real businesses rather than building automation merely because the technology is interesting."
+    },
+    {
+      "heading": "Closing discussion",
+      "content": "Participants thanked Ritesh, Ankur, and the organisers. Several said the session had generated many practical ideas for tasks they were still doing manually.\n\nThe group also briefly greeted a participant who joined while travelling on a flight. The conversation then returned to final questions.\n\nA participant asked whether equivalent solutions were available for Microsoft Outlook and Microsoft-based offices. The source recording ends immediately after the trainer begins responding: \"Of course. I mean, I shared the...\"\n\n**Source limitation:** The remainder of that answer is not present in the supplied RTF and has not been reconstructed or invented."
+    }
+  ],
+  "keyConcepts": [
+    {
+      "title": "Trigger",
+      "content": "The event that starts the automation, such as a new spreadsheet row, a changed file, a scheduled time, or a new Drive upload."
+    },
+    {
+      "title": "Variable",
+      "content": "A piece of information produced by one step and reused by another. For example, the issue description from a new ticket becomes the input to Gemini."
+    },
+    {
+      "title": "Extraction",
+      "content": "AI converts unstructured information into defined fields such as Priority, Category, Summary, Sentiment, or Required Action."
+    },
+    {
+      "title": "Decision and branch",
+      "content": "A rule controls what happens next. For example, only a ticket with Priority equal to High should generate an immediate Chat alert."
+    },
+    {
+      "title": "Handoff",
+      "content": "The workflow sends the result to a person or team through Chat, email, a task, a digest, or another approved channel."
+    },
+    {
+      "title": "Human verification",
+      "content": "An AI-generated workflow should be tested with realistic examples. A calm but serious issue and a loud but minor issue are useful tests because they reveal whether the system judges actual impact instead of emotional language."
+    }
+  ],
+  "takeaways": [
+    "Start with a recurring business problem, not with a tool.",
+    "Define the trigger, required context, decision, action, and handoff before building.",
+    "Give the AI the minimum data necessary.",
+    "Ask AI to produce structured fields when later steps require reliable decisions.",
+    "Use a stable row identifier when updating spreadsheets.",
+    "Prevent workflow loops by watching only the input columns that should trigger the flow.",
+    "Test both normal and difficult examples.",
+    "Keep high-impact external actions behind an approval or clear condition.",
+    "Use Workspace Studio for focused Google workflows and a broader automation platform when the system must coordinate many external tools.",
+    "Treat AI-generated workflows as drafts that require inspection and testing."
+  ],
+  "reflections": [
+    "Which repetitive task in your organisation has a clear trigger, input, decision, action, and handoff?",
+    "What data does that workflow genuinely need, and what data should remain inaccessible?",
+    "Which step should use deterministic rules, and which step genuinely benefits from AI reasoning?",
+    "What identifier will ensure that the workflow updates the correct record?",
+    "What failure should cause a human escalation?",
+    "How will you verify that AI classifications match actual business outcomes?",
+    "Should the workflow remain inside Google or Microsoft, or does it require a broader platform such as n8n, Zapier, or Power Automate?",
+    "What time, cost, response-time, or quality metric will prove that the automation is commercially useful?"
+  ],
+  "highlights": [
+    {
+      "heading": "Opening demonstration: extracting learning material from a video",
+      "bullets": [
+        "The starter detected when a file was edited in Google Drive.",
+        "The next step used Gemini with a prompt and a variable from the starter.",
+        "Gemini was instructed to return the information as a list.",
+        "The final step sent the Gemini output by email."
+      ]
+    },
+    {
+      "heading": "Ticket Prioritiser demonstration",
+      "bullets": [
+        "**Trigger:** The flow starts when a sheet changes or a new ticket row is added.",
+        "**Extract:** Gemini reads the issue description and returns a category, a priority, and a short summary.",
+        "**Update rows:** The workflow writes the extracted priority and category into the correct ticket row.",
+        "**Decision:** The workflow checks whether the priority is High.",
+        "**Handoff:** If the decision is true, the workflow notifies a person in Google Chat."
+      ]
+    },
+    {
+      "heading": "Can Gemini build the workflow from a document?",
+      "bullets": [
+        "Give the source document to Gemini.",
+        "Ask Gemini to convert the document into a clear Workspace Studio workflow prompt.",
+        "Paste that generated prompt into the Workspace Studio AI box.",
+        "Review and correct the generated workflow."
+      ]
+    },
+    {
+      "heading": "End-of-day support digest",
+      "bullets": [
+        "How many tickets arrived.",
+        "How many remain open.",
+        "Which open tickets are High priority.",
+        "What must be addressed first the following morning."
+      ]
+    },
+    {
+      "heading": "Document and incident summarisation",
+      "bullets": [
+        "What had gone wrong.",
+        "What action was required.",
+        "The sentiment of the document.",
+        "Whether the matter was urgent.",
+        "Whether the document contained a question requiring an answer."
+      ]
+    },
+    {
+      "heading": "Security, privacy, and data boundaries",
+      "bullets": [
+        "Use the organisation's approved Workspace environment.",
+        "Restrict the workflow to the minimum necessary files, folders, users, and messages.",
+        "Do not automate sensitive sources merely because the connector makes them available.",
+        "Understand that using an external model or platform introduces a different data-sharing boundary.",
+        "Organisational permissions and governance still matter even when the automation remains inside one ecosystem."
+      ]
+    },
+    {
+      "heading": "Workspace Studio compared with larger automation platforms",
+      "bullets": [
+        "Workspace Studio is useful when the work primarily stays inside Gmail, Drive, Sheets, Docs, Chat, Calendar, and other Google services.",
+        "n8n, Zapier, Power Automate, or similar platforms may be more appropriate when the workflow requires broader integrations, detailed branching, richer controls, or connections outside Google Workspace.",
+        "Google Opal can also support workflows and applications that need to connect beyond the immediate Workspace environment."
+      ]
+    },
+    {
+      "heading": "Organisational platforms and \"Chinese walls\"",
+      "bullets": [
+        "Google Workspace Studio and related Google tools in a Google environment.",
+        "Power Automate and related Microsoft tools in a Microsoft environment."
+      ]
+    },
+    {
+      "heading": "Key Concepts",
+      "bullets": [
+        "Trigger: The event that starts the automation, such as a new spreadsheet row, a changed file, a scheduled time, or a new Drive up...",
+        "Variable: A piece of information produced by one step and reused by another. For example, the issue description from a new ticket ...",
+        "Extraction: AI converts unstructured information into defined fields such as Priority, Category, Summary, Sentiment, or Required Act...",
+        "Decision and branch: A rule controls what happens next. For example, only a ticket with Priority equal to High should generate an immediate C...",
+        "Handoff: The workflow sends the result to a person or team through Chat, email, a task, a digest, or another approved channel.",
+        "Human verification: An AI-generated workflow should be tested with realistic examples. A calm but serious issue and a loud but minor issue a..."
+      ]
+    },
+    {
+      "heading": "Practical Takeaways",
+      "bullets": [
+        "Start with a recurring business problem, not with a tool.",
+        "Define the trigger, required context, decision, action, and handoff before building.",
+        "Give the AI the minimum data necessary.",
+        "Ask AI to produce structured fields when later steps require reliable decisions.",
+        "Use a stable row identifier when updating spreadsheets.",
+        "Prevent workflow loops by watching only the input columns that should trigger the flow.",
+        "Test both normal and difficult examples.",
+        "Keep high-impact external actions behind an approval or clear condition."
+      ]
+    }
+  ],
+  "faqs": [
+    {
+      "q": "Can Gemini build the entire Workspace Studio flow from a document?",
+      "a": "Not directly by pasting a document URL. The better approach is to give the document to Gemini, ask it to convert the requirements into a clear Workspace Studio prompt, paste that prompt into Workspace Studio, then review and correct the generated flow."
+    },
+    {
+      "q": "How does Workspace Studio compare to n8n, Zapier, or Power Automate?",
+      "a": "Workspace Studio is best for workflows that stay inside Gmail, Drive, Sheets, Docs, Chat, and Calendar. Broader integrations, richer branching, or external tools may need n8n, Zapier, Power Automate, or Google Opal."
+    },
+    {
+      "q": "Is it safe to give a workflow access to Drive or Gmail?",
+      "a": "The workflow stays inside the Google ecosystem and uses the organisation's existing permissions. The key principle is scope: include only the files, folders, and messages the workflow genuinely needs. A production implementation should still review admin settings, data terms, and security policies."
+    },
+    {
+      "q": "What is the standard architecture for these automations?",
+      "a": "Trigger \u2192 Data/context \u2192 AI reasoning \u2192 Action \u2192 Decision \u2192 Human handoff \u2192 Verification. Every demonstration in the class followed this pattern."
+    },
+    {
+      "q": "Which repetitive task in your organisation has a clear trigger, input, decision, action, and handoff?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    },
+    {
+      "q": "What data does that workflow genuinely need, and what data should remain inaccessible?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    },
+    {
+      "q": "Which step should use deterministic rules, and which step genuinely benefits from AI reasoning?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    },
+    {
+      "q": "What identifier will ensure that the workflow updates the correct record?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    },
+    {
+      "q": "What failure should cause a human escalation?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    },
+    {
+      "q": "How will you verify that AI classifications match actual business outcomes?",
+      "a": "This is a reflection question designed to help you apply the lesson to your own work. Consider your current processes and identify where a trigger, decision, action, and handoff pattern could replace manual effort."
+    }
+  ],
+  "screenshots": []
+}
