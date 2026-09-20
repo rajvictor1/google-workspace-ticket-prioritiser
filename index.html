@@ -174,87 +174,86 @@
     .mobile-nav .logo-text { font-weight: 800; font-size: 16px; font-family: 'Space Grotesk', sans-serif; }
 
     /* Hero */
-    .hero { padding: 48px 0 36px; }
+    .hero { padding: 36px 0 44px; border-bottom: 1px solid var(--border); }
     .hero-grid {
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 44px;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
       align-items: start;
     }
     .hero-left { min-width: 0; }
+    .hero-left .eyebrow { margin-bottom: 22px; }
+    .hero-left h1 {
+      font-size: clamp(46px, 6vw, 72px);
+      line-height: 1.0;
+      font-weight: 800;
+      margin: 0 0 22px;
+      letter-spacing: -0.035em;
+    }
+    .hero-left .lead {
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin: 0 0 28px;
+      max-width: 540px;
+    }
+
     .trainer-card {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 16px;
-      padding: 16px 18px;
-      background: var(--surface);
+      padding: 20px 22px;
+      background: rgba(16,16,22,0.7);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       margin-bottom: 24px;
-      max-width: 460px;
     }
     .trainer-card .trainer-avatar {
-      width: 62px; height: 62px;
+      width: 58px; height: 58px;
       border-radius: 50%;
       object-fit: cover;
-      border: 2px solid rgba(167,139,250,0.35);
-      box-shadow: 0 8px 24px var(--accent-glow);
+      border: 1px solid rgba(167,139,250,0.25);
       flex-shrink: 0;
     }
-    .trainer-card .trainer-info .name { font-size: 17px; font-weight: 800; }
-    .trainer-card .trainer-info .role { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-    .trainer-card .trainer-info a { color: var(--accent-2); font-size: 13px; font-weight: 600; }
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      background: rgba(167,139,250,0.1);
-      border: 1px solid rgba(167,139,250,0.2);
-      color: var(--accent);
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.7px;
-      margin-bottom: 18px;
-    }
-    .eyebrow .pulse {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .trainer-card .trainer-info .name { font-size: 17px; font-weight: 800; margin-bottom: 5px; }
+    .trainer-card .trainer-info .role { font-size: 13px; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px; }
+    .trainer-card .trainer-info .role a { color: var(--accent); font-weight: 600; }
 
-    h1 {
-      font-size: clamp(40px, 5.2vw, 64px);
-      line-height: 1.05;
-      font-weight: 800;
-      margin: 0 0 12px;
-      letter-spacing: -0.03em;
-    }
-    .subline {
-      font-size: 18px;
+    .trainer-desc {
+      font-size: 14.5px;
+      line-height: 1.7;
       color: var(--text-muted);
       margin: 0 0 28px;
-      line-height: 1.5;
+      max-width: 560px;
     }
-    .subline .bracket { font-size: 15px; color: var(--text-muted); opacity: 0.6; }
-
-    .hero-right {
+    .hero-badges {
       display: flex;
-      flex-direction: column;
-      gap: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
     }
+    .hero-badge {
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: rgba(16,16,22,0.7);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .hero-badge.accent {
+      background: rgba(167,139,250,0.12);
+      border-color: rgba(167,139,250,0.35);
+      color: var(--accent);
+    }
+
+    .hero-right { min-width: 0; }
     .hero-image {
       width: 100%;
       border-radius: var(--radius-sm);
       overflow: hidden;
       border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      aspect-ratio: 16 / 10;
+      aspect-ratio: 4 / 3;
       background: var(--surface);
     }
     .hero-image img {
@@ -264,10 +263,11 @@
       display: block;
     }
     .takeaway-card {
-      background: var(--surface);
+      background: rgba(16,16,22,0.8);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 20px;
+      padding: 22px;
+      margin-top: 18px;
     }
     .takeaway-card .label {
       display: flex;
@@ -276,16 +276,26 @@
       font-size: 12px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.7px;
       color: var(--accent);
       margin-bottom: 10px;
     }
     .takeaway-card p {
-      font-size: 15px;
+      font-size: 16px;
       color: var(--text);
       margin: 0;
-      line-height: 1.6;
+      line-height: 1.65;
     }
+
+    .hero-footer {
+      grid-column: 1 / -1;
+      margin-top: 44px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .hero-footer strong { color: var(--text); }
 
     /* Tabs */
     .tabs {
@@ -671,20 +681,26 @@
       <header class="hero" id="hero">
         <div class="hero-grid">
           <div class="hero-left">
+            <div class="eyebrow">
+              <span id="hero-eyebrow">Learning Notes</span>
+            </div>
+            <h1 id="lesson-headline">Stop Repeating Yourself</h1>
+            <p class="lead" id="lesson-lead">From scattered support tickets to a system that triages, labels, and alerts for you.</p>
+
             <div class="trainer-card">
               <img src="assets/trainer-ritesh-hegde-large.jpg" alt="Ritesh Hegde" class="trainer-avatar">
               <div class="trainer-info">
                 <div class="name">Ritesh Hegde</div>
-                <div class="role">Google Workspace Studio Automation · <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank">LinkedIn</a></div>
+                <div class="role">Google Workspace Studio Automation · AI Educator · <a href="https://www.linkedin.com/in/ritz7ai/" target="_blank">View LinkedIn profile</a></div>
               </div>
             </div>
 
-            <div class="eyebrow">
-              <span class="pulse"></span>
-              <span id="hero-eyebrow">Google Workspace Studio Automation</span>
+            <p class="trainer-desc" id="trainer-desc">Ritesh demonstrated how to turn repetitive Google Workspace tasks — ticket sorting, document triage, meeting notes, and end-of-day reports — into hands-free Studio flows powered by Gemini. The focus is on practical automation you can ship inside your existing Workspace environment.</p>
+
+            <div class="hero-badges">
+              <span class="hero-badge accent" id="hero-badge-1">Trainer: Ritesh Hegde</span>
+              <span class="hero-badge" id="hero-badge-2">2 lessons</span>
             </div>
-            <h1 id="lesson-headline">Stop Repeating Yourself</h1>
-            <p class="subline" id="lesson-subline"><span class="bracket">(</span> Let Gemini sort your tickets. You handle only the urgent ones. <span class="bracket">)</span></p>
           </div>
 
           <div class="hero-right">
@@ -698,6 +714,10 @@
               </div>
               <p id="hero-takeaway">Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent.</p>
             </div>
+          </div>
+
+          <div class="hero-footer">
+            Learning site prepared by <strong>Rajesh Kumar</strong> · Founder, BrandOps Site
           </div>
         </div>
       </header>
@@ -733,8 +753,11 @@
           id: 1,
           shortTitle: "Ticket Prioritiser",
           headline: "Stop Repeating Yourself",
-          subline: "( Let Gemini sort your tickets. You handle only the urgent ones. )",
-          eyebrow: "Google Workspace Studio Automation",
+          lead: "From scattered support tickets to a system that triages, labels, and alerts for you.",
+          eyebrow: "Learning Notes",
+          badge1: "Trainer: Ritesh Hegde",
+          badge2: "2 lessons",
+          trainerDesc: "Ritesh demonstrated how to turn repetitive Google Workspace tasks — ticket sorting, document triage, meeting notes, and end-of-day reports — into hands-free Studio flows powered by Gemini. The focus is on practical automation you can ship inside your existing Workspace environment.",
           completed: false,
           screenshots: [
             { file: "assets/verify-6.png", caption: "Workspace Studio flows list showing GOC Lab B – Ticket Prioritiser" },
@@ -830,8 +853,11 @@
           id: 2,
           shortTitle: "Building Business Automations",
           headline: "Building Business Automations",
-          subline: "( With Google Workspace Studio and AI. )",
+          lead: "From one-off scripts to reusable AI workflows inside your existing Workspace.",
           eyebrow: "New Lesson",
+          badge1: "Trainer: Ritesh Hegde",
+          badge2: "2 lessons",
+          trainerDesc: "Ritesh walks through six live automation patterns: ticket prioritisation, video-to-notes, end-of-day digests, document triage, calendar report bots, and event promotion generators. Each pattern uses the same Trigger → AI → Action → Decision → Handoff architecture.",
           completed: false,
           screenshots: [],
           learn: [
@@ -987,10 +1013,11 @@
     function renderHero() {
       const lesson = course.lessons[currentLesson];
       document.getElementById('lesson-headline').textContent = lesson.headline;
-      const subline = document.getElementById('lesson-subline');
-      subline.innerHTML = `\u003cspan class="bracket"\u003e(\u003c/span\u003e ${lesson.subline.replace(/[()]/g, '')} \u003cspan class="bracket"\u003e)\u003c/span\u003e`;
-      const eyebrowEl = document.getElementById('hero-eyebrow');
-      eyebrowEl.textContent = lesson.eyebrow;
+      document.getElementById('lesson-lead').textContent = lesson.lead;
+      document.getElementById('hero-eyebrow').textContent = lesson.eyebrow;
+      document.getElementById('hero-badge-1').textContent = lesson.badge1;
+      document.getElementById('hero-badge-2').textContent = lesson.badge2;
+      document.getElementById('trainer-desc').textContent = lesson.trainerDesc;
 
       const heroData = {
         "1": { image: "assets/verify-1.png", alt: "Workspace Studio activity history", takeaway: "Let Gemini read, judge, and route your support tickets so you only interrupt people when something is truly urgent." },
