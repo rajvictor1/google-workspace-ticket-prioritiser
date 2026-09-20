@@ -1320,7 +1320,11 @@
       currentTab = tab;
       renderTabButtons();
       renderContent();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const tabsEl = document.getElementById('tabs');
+      if (tabsEl) {
+        const offset = tabsEl.getBoundingClientRect().top + window.pageYOffset - 92;
+        window.scrollTo({ top: offset, behavior: 'smooth' });
+      }
     }
 
     function goToLesson(idx) {
