@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket Prioritiser | Google Workspace Studio Automation</title>
+  <meta name="description" content="How a Google Workspace Studio flow reads support tickets, sets priority and category with Gemini, and only alerts people when it matters.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f8f9fa;
+      --surface-2: #f1f3f4;
+      --border: #dadce0;
+      --text: #202124;
+      --text-secondary: #5f6368;
+      --blue: #1a73e8;
+      --blue-light: #e8f0fe;
+      --red: #ea4335;
+      --red-light: #fce8e6;
+      --yellow: #fbbc04;
+      --yellow-light: #fef3c7;
+      --green: #34a853;
+      --green-light: #e6f4ea;
+      --shadow: 0 1px 2px 0 rgba(60,64,67,0.08), 0 1px 6px 1px rgba(60,64,67,0.06);
+      --shadow-lg: 0 4px 8px 0 rgba(60,64,67,0.10), 0 8px 24px 4px rgba(60,64,67,0.08);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Navbar */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .nav-logo svg { width: 28px; height: 28px; }
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .nav-links a { color: var(--text-secondary); }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: var(--blue);
+      color: #fff !important;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .nav-cta:hover { background: #1557b0; text-decoration: none; }
+
+    /* Hero */
+    .hero {
+      padding: 80px 0 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--blue-light);
+      color: var(--blue);
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 56px);
+      line-height: 1.08;
+      font-weight: 800;
+      margin: 0 0 20px;
+      letter-spacing: -0.02em;
+    }
+    .hero p.lead {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin: 0 0 28px;
+      max-width: 540px;
+    }
+    .hero-meta {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .hero-meta span { display: flex; align-items: center; gap: 6px; }
+
+    .hero-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .hero-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .hero-card-head .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); }
+    .hero-card-body { padding: 20px; }
+    .chat-bubble {
+      background: var(--green-light);
+      border: 1px solid #c6e7c8;
+      border-radius: 16px 16px 16px 4px;
+      padding: 14px 16px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .chat-bubble strong { color: var(--text); }
+    .hero-card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .hero-card-row:last-child { border-bottom: 0; }
+    .hero-card-label { color: var(--text-secondary); }
+    .hero-card-value { font-weight: 600; }
+    .hero-card-value.high { color: var(--red); }
+    .hero-card-value.low { color: var(--blue); }
+
+    /* Sections */
+    section { padding: 72px 0; }
+    section.alt { background: var(--surface); }
+    .section-head {
+      max-width: 720px;
+      margin-bottom: 44px;
+    }
+    .section-head h2 {
+      font-size: clamp(28px, 3.5vw, 40px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin: 0 0 12px;
+      letter-spacing: -0.01em;
+    }
+    .section-head p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Problem / Solution */
+    .problem-solution {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .info-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .info-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 14px;
+    }
+    .info-card ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--text-secondary);
+    }
+    .info-card li { margin-bottom: 8px; }
+
+    /* Framework */
+    .framework-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .framework-card {
+      background: #fff;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .framework-card.blue { border-color: var(--blue); }
+    .framework-card.red { border-color: var(--red); }
+    .framework-card.yellow { border-color: var(--yellow); }
+    .framework-card.green { border-color: var(--green); }
+    .framework-card.blue .framework-icon { background: var(--blue); }
+    .framework-card.red .framework-icon { background: var(--red); }
+    .framework-card.yellow .framework-icon { background: var(--yellow); }
+    .framework-card.green .framework-icon { background: var(--green); }
+    .framework-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    .framework-card h4 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+    .framework-card.blue h4 { color: var(--blue); }
+    .framework-card.red h4 { color: var(--red); }
+    .framework-card.yellow h4 { color: var(--yellow); }
+    .framework-card.green h4 { color: var(--green); }
+    .framework-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .framework-card ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .framework-card li { margin-bottom: 6px; }
+
+    /* Steps */
+    .steps {
+      display: grid;
+      gap: 16px;
+    }
+    .step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 20px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 18px;
+    }
+    .step h4 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .step p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Table */
+    .data-table-wrap {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .data-table th {
+      background: var(--surface-2);
+      text-align: left;
+      padding: 14px 16px;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .data-table tr:last-child td { border-bottom: 0; }
+    .data-table .issue { color: var(--text); font-weight: 500; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .badge-high { background: var(--red-light); color: var(--red); }
+    .badge-medium { background: var(--yellow-light); color: #b06000; }
+    .badge-low { background: var(--blue-light); color: var(--blue); }
+    .badge-billing { background: #fff0e6; color: #d56a00; }
+    .badge-technical { background: #e8eaed; color: #444; }
+    .badge-account { background: #e8f0fe; color: var(--blue); }
+
+    /* Verification */
+    .verification-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .verification-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .verification-card .check {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--green-light);
+      color: var(--green);
+      display: grid;
+      place-items: center;
+      margin: 0 auto 14px;
+    }
+    .verification-card h4 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .verification-card p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Summary */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .summary-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+    .summary-card h4 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      margin: 0 0 12px;
+    }
+    .summary-card p {
+      font-size: 15px;
+      color: var(--text);
+      margin: 0;
+      font-weight: 500;
+    }
+
+    /* Screenshot placeholders */
+    .screenshot {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      min-height: 220px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-top: 24px;
+    }
+    .screenshot img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--surface-2);
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    footer strong { color: var(--text); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 40px; }
+      .problem-solution { grid-template-columns: 1fr; }
+      .framework-grid { grid-template-columns: repeat(2, 1fr); }
+      .verification-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 520px) {
+      .framework-grid { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .step { grid-template-columns: 1fr; }
+      .step-num { margin-bottom: 10px; }
+    }
+
+    @media print {
+      .nav, footer { display: none; }
+      section { padding: 28px 0; page-break-inside: avoid; }
+      .hero { padding-top: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <div class="nav-logo">
+        <svg viewBox="0 0 24 24" fill="none"><path fill="#4285F4" d="M22.5 12c0-2.7-1.1-5.1-2.8-6.9L12 13v5h5.8c1.3-1.6 2.1-3.6 2.1-5.8z"/><path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.9-3c-1.1.7-2.4 1.1-4 1.1-3.1 0-5.7-2.1-6.6-4.9H2.3v3.4C4.4 21.4 8 24 12 24z"/><path fill="#FBBC05" d="M5.4 14.3c-.3-.7-.4-1.5-.4-2.3s.1-1.6.4-2.3V6.3H2.3C1.5 8.1 1 10 1 12s.5 3.9 1.3 5.7l3.1-2.4z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.2.6 4.4 1.8l3.3-3.3C17.9 1.2 15.2 0 12 0 8 0 4.4 2.6 2.3 5.7l3.1 2.4c.9-2.8 3.5-4.9 6.6-4.9z"/></svg>
+        Ticket Prioritiser
+      </div>
+      <div class="nav-links">
+        <a href="#problem">Problem</a>
+        <a href="#framework">Framework</a>
+        <a href="#build">Build</a>
+        <a href="#results">Results</a>
+        <a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank" class="nav-cta">Open flow →</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="eyebrow">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Google Workspace Studio Automation
+        </div>
+        <h1>Let Gemini sort your support tickets while you focus on the urgent ones.</h1>
+        <p class="lead">A live Workspace Studio flow that reads every new ticket, extracts priority and category with Gemini, writes the result back to the sheet, and only alerts you when a ticket is actually high priority.</p>
+        <div class="hero-meta">
+          <span>👤 Trainer: <strong>Ritesh Hegde</strong></span>
+          <span>🛠️ Built in Workspace Studio</span>
+          <span>✅ Status: <strong>Active & tested</strong></span>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="hero-card-head">
+          <span class="dot"></span>
+          New high-priority ticket detected
+        </div>
+        <div class="hero-card-body">
+          <div class="chat-bubble">
+            <strong>Checkout failing for all customers and no payments can be completed.</strong><br>
+            Priority: <span class="hero-card-value high">High</span> · Category: <span class="hero-card-value">Billing</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="hero-card-label">Status</span>
+            <span class="hero-card-value">Chat alert sent</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="hero-card-label">Auto-classified by</span>
+            <span class="hero-card-value">Gemini</span>
+          </div>
+          <div class="hero-card-row">
+            <span class="hero-card-label">Written to sheet</span>
+            <span class="hero-card-value">Priority + Category</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="problem">
+    <div class="container">
+      <div class="section-head">
+        <h2>Workflow opportunity</h2>
+        <p>Every support ticket arrives with the same urgency in the inbox, but not every ticket deserves the same attention. Someone has to read, judge, and route each one — a repetitive decision that burns time and invites bias.</p>
+      </div>
+      <div class="problem-solution">
+        <div class="info-card">
+          <h3>The problem</h3>
+          <ul>
+            <li>Tickets stack up faster than they can be triaged.</li>
+            <li>Emotional wording ("URGENT!") gets treated as high priority.</li>
+            <li>Repetitive sorting pulls people away from real resolution work.</li>
+            <li>High-priority issues may sit unnoticed among noisy low-priority ones.</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <h3>The solution</h3>
+          <ul>
+            <li>Workspace Studio watches the Google Sheet for new ticket rows.</li>
+            <li>Gemini judges impact, not tone, and returns Priority + Category.</li>
+            <li>The flow writes those values back to the same row.</li>
+            <li>Only High-priority tickets trigger a Google Chat notification.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="framework">
+    <div class="container">
+      <div class="section-head">
+        <h2>The Four-Filter Framework</h2>
+        <p>Ritesh Hegde’s workflow design breaks any automation into four clear parts: what starts it, what decides it, what changes because of it, and who needs to know.</p>
+      </div>
+      <div class="framework-grid">
+        <div class="framework-card blue">
+          <div class="framework-icon">1</div>
+          <h4>Trigger</h4>
+          <p>A new ticket row appears in the private Google Sheet.</p>
+          <ul>
+            <li>Watches the <strong>Issue description</strong> column.</li>
+            <li>Ignores its own write-back to Priority/Category.</li>
+            <li>Fires within seconds of a new row.</li>
+          </ul>
+        </div>
+        <div class="framework-card red">
+          <div class="framework-icon">2</div>
+          <h4>Decision</h4>
+          <p>Gemini extracts three fields from the ticket text.</p>
+          <ul>
+            <li><strong>Priority:</strong> High / Medium / Low</li>
+            <li><strong>Category:</strong> Billing, Technical, Policy, Account Access, Other</li>
+            <li><strong>Summary:</strong> One line, max 15 words</li>
+          </ul>
+        </div>
+        <div class="framework-card yellow">
+          <div class="framework-icon">3</div>
+          <h4>Action</h4>
+          <p>The flow updates the original row with Gemini’s output.</p>
+          <ul>
+            <li>Matches row by Timestamp.</li>
+            <li>Writes Priority to the Priority column.</li>
+            <li>Writes Category to the Category column.</li>
+          </ul>
+        </div>
+        <div class="framework-card green">
+          <div class="framework-icon">4</div>
+          <h4>Handoff</h4>
+          <p>Only High-priority tickets interrupt a person.</p>
+          <ul>
+            <li>Check if Priority = High.</li>
+            <li>If true, send a private Google Chat alert.</li>
+            <li>Medium and Low tickets are silent.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="build">
+    <div class="container">
+      <div class="section-head">
+        <h2>How it was built in six steps</h2>
+        <p>Built and verified in Google Workspace Studio using a private Google Sheet as both the source and the destination.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h4>Created the private Google Sheet</h4>
+            <p>Columns: Timestamp, Issue description, Reported by, Priority, Category. Imported three sample support tickets from the CSV.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h4>Set the trigger</h4>
+            <p>“When a sheet changes” watches the Issue description column in Sheet1. It only fires on real new tickets, not on the flow’s own write-back.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h4>Configured Gemini extraction</h4>
+            <p>Passed Issue description and Reported by to Gemini. Asked for priority based on business impact, category from a fixed list, and a one-line summary.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <h4>Updated the triggering row</h4>
+            <p>Matched the row by Timestamp, then wrote Gemini Priority into the Priority column and Gemini Category into the Category column.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div>
+            <h4>Added the high-priority handoff</h4>
+            <p>A “Check if” branch tests whether Priority equals High. Only then does the flow send a private Google Chat notification.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div>
+            <h4>Activated and tested</h4>
+            <p>Turned the flow on. Added two live test rows to the sheet. Both completed successfully, producing High/Billing and Low/Account Access classifications.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="data">
+    <div class="container">
+      <div class="section-head">
+        <h2>Source ticket data</h2>
+        <p>Three sample tickets from the CSV. Priority and Category were blank in the source and are filled by the workflow.</p>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Issue description</th>
+              <th>Reported by</th>
+              <th>Priority</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>9/20/2026 9:00</td>
+              <td class="issue">All our enterprise users are getting a 500 error on checkout and cannot complete payments.</td>
+              <td>Sarah Jenkins</td>
+              <td><span class="badge badge-high">High</span></td>
+              <td><span class="badge badge-technical">Technical</span></td>
+            </tr>
+            <tr>
+              <td>9/20/2026 9:05</td>
+              <td class="issue">Can someone please reset my password? I forgot it and need to log in today.</td>
+              <td>Alex Mercer</td>
+              <td><span class="badge badge-low">Low</span></td>
+              <td><span class="badge badge-account">Account Access</span></td>
+            </tr>
+            <tr>
+              <td>9/20/2026 9:10</td>
+              <td class="issue">URGENT! FIX MY ACCOUNT RIGHT NOW THIS IS RIDICULOUS AND UNACCEPTABLE!</td>
+              <td>David Ross</td>
+              <td><span class="badge badge-low">Low</span></td>
+              <td><span class="badge badge-account">Account Access</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);">Note: The third ticket sounds dramatic, but Gemini judged it by impact — not tone — and correctly classified it as Low priority.</p>
+    </div>
+  </section>
+
+  <section id="results">
+    <div class="container">
+      <div class="section-head">
+        <h2>Live test results</h2>
+        <p>After activation, two new tickets were added directly to the sheet to confirm the end-to-end flow works in production.</p>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Test ticket</th>
+              <th>Classification</th>
+              <th>Chat alert?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="issue">Checkout failing for all customers and no payments can be completed</td>
+              <td><span class="badge badge-high">High</span> <span class="badge badge-billing">Billing</span></td>
+              <td><span style="color:var(--green);font-weight:700;">Yes ✓</span></td>
+            </tr>
+            <tr>
+              <td class="issue">Customer needs help updating the spelling of their profile name</td>
+              <td><span class="badge badge-low">Low</span> <span class="badge badge-account">Account Access</span></td>
+              <td><span style="color:var(--text-secondary);">No — silent</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px;font-size:13px;color:var(--text-secondary);">Workspace Studio recorded both executions as Complete on September 20, 2026 at 10:55 AM and 10:56 AM.</p>
+    </div>
+  </section>
+
+  <section class="alt" id="verify">
+    <div class="container">
+      <div class="section-head">
+        <h2>Verification evidence</h2>
+        <p>Three screenshots were captured during final verification. Add them to the <code>assets/</code> folder and update the image paths below.</p>
+      </div>
+      <div class="verification-grid">
+        <div class="verification-card">
+          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h4>Active workflow overview</h4>
+          <p>Six-step flow visible in Workspace Studio with Turn on confirmed.</p>
+        </div>
+        <div class="verification-card">
+          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h4>Activity history</h4>
+          <p>Two completed executions recorded at 10:55 AM and 10:56 AM.</p>
+        </div>
+        <div class="verification-card">
+          <div class="check"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h4>Classified sheet</h4>
+          <p>Final Google Sheet shows imported tickets plus High/Low test results.</p>
+        </div>
+      </div>
+      <div class="screenshot">Screenshot placeholders — drop images into assets/ and update paths</div>
+    </div>
+  </section>
+
+  <section id="summary">
+    <div class="container">
+      <div class="section-head">
+        <h2>Problem · Solution · Outcome · Metric</h2>
+        <p>The 3-minute share-back summary for the workshop.</p>
+      </div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h4>Problem</h4>
+          <p>Manually triaging every support ticket is slow, inconsistent, and lets emotional tone drive urgency.</p>
+        </div>
+        <div class="summary-card">
+          <h4>Solution</h4>
+          <p>A Workspace Studio flow uses Gemini to classify tickets by impact, then routes only High-priority items to Chat.</p>
+        </div>
+        <div class="summary-card">
+          <h4>Outcome</h4>
+          <p>Routine tickets sort themselves automatically. People only get interrupted when a ticket is truly urgent.</p>
+        </div>
+        <div class="summary-card">
+          <h4>Metric</h4>
+          <p>Two live test tickets classified end-to-end in under one minute with zero manual sorting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="links">
+    <div class="container">
+      <div class="section-head">
+        <h2>Live resources</h2>
+        <p>Access the private Google Sheet and the active Workspace Studio flow directly.</p>
+      </div>
+      <div class="problem-solution">
+        <div class="info-card">
+          <h3>Google Sheet</h3>
+          <p style="color:var(--text-secondary);font-size:14px;">Private to Rajesh Kumar. Contains source tickets and the classified test results.</p>
+          <p style="margin-top:12px;"><a href="https://docs.google.com/spreadsheets/d/1t5chhAh9STqqYvnBMlGFbDQAZ-GVC0vwWJYCnm0oJtA/edit?gid=0" target="_blank">Open Sheet →</a></p>
+        </div>
+        <div class="info-card">
+          <h3>Workspace Studio flow</h3>
+          <p style="color:var(--text-secondary);font-size:14px;">Active flow named “Ticket Prioritiser.” You can see the six steps and run history.</p>
+          <p style="margin-top:12px;"><a href="https://studio.workspace.google.com/workflow/ef47a00fd34674ac68a69e22f922a8772" target="_blank">Open flow →</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      Built by <strong>Rajesh Kumar</strong> · Founder, <a href="https://www.brandops.site" target="_blank">BrandOps Site</a><br>
+      Training by <strong>Ritesh Hegde</strong> · Google Workspace Studio Automation
+    </div>
+  </footer>
+
+</body>
+</html>
